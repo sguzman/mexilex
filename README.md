@@ -108,3 +108,7 @@ The [published release consumer check](.github/workflows/verify-release.yml) ind
 ## Updating the Wiktionary corpus safely
 
 The [upstream review workflow](.github/workflows/review-upstream.yml) checks the actual new source SHA-256 and prepares a non-destructive old-versus-new reconciliation if the extraction changes. The [refresh workflow](.github/workflows/seed-corpus.yml) is manual-only and refuses to overwrite the Git-tracked lexicon without the reviewed source checksum and an explicit accepted change budget. See [upstream update policy and evidence](docs/upstream-review.md). The first review verified that the currently published Kaikki Spanish source was unchanged.
+
+## Independent Mexican regional evidence from Wikcionario
+
+A second licensed regional evidence layer is tracked in [Spanish Wiktionary Mexico records](evidence/WIKCIONARIO-SOURCE.md), with a [versioned manifest](evidence/eswiktionary-mexico.manifest.json). The import observed **2,304 explicitly Mexico-tagged Spanish Wiktionary senses across 1,912 normalized spellings**; **1,235 spellings** also occur as eligible English-defined Mexilex headwords. The others remain visible in the source dataset but are not given invented English definitions. The site uses a separate **WIKCIONARIO MX** word-evidence indicator; it never changes the sense-level Mexico label inherited from English Wiktionary. Content is CC BY-SA/GFDL, independent of the MIT code license and GPL-licensed ACTIV-ES rates.

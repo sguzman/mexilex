@@ -42,3 +42,9 @@ The [ACTIV-ES v0.2 Git-tracked evidence](../evidence/README.md) was generated fr
 ## Explicitly excluded restricted dataset
 
 Mark Davies's [Corpus del Español, Mexico database at Gonzaga University](https://repository.gonzaga.edu/corp_span/57/) publicly describes downloadable Mexican text/corpus tables, but its published restrictions prohibit distribution outside Gonzaga and using the data to create commercial or consumer software. **Do not import, normalize, or rehost that database in Mexilex.** Searchable or technically downloadable is not equivalent to having redistribution rights.
+
+## Independently Mexico-tagged Spanish Wiktionary entries (2026-10-31)
+
+Spanish Wiktionary's published [Mexico-tagged Español subset](https://kaikki.org/eswiktionary/Espa%C3%B1ol/tags/p9/Mexico/index.html) was fetched and audited as a separate CC BY-SA/GFDL source (not commercial Mexican dictionary content). The source held 1,966 entries with 2,304 Mexico-tagged Spanish senses; the normalized Git sidecar stores 1,946 unique word/POS pairs across 1,912 distinct case-normalized spellings. Exactly 1,235 spellings match English-Wiktionary non-form-only headwords. The remaining 677 are source-evidenced spellings **without guaranteed English definitions**, not missing Mexican meaning tags that we should invent.
+
+The site uses this as spelling-level corroboration, and every affected entry can link to its Spanish Wiktionary page. The foreign-language sense meanings were **not translated, mapped, or automatically attached to English senses**. It therefore adds independent regional evidence without increasing the 2,115 source-verified English-Wiktionary Mexico-specific senses. Reproducible importer, license and checksum: [evidence/WIKCIONARIO-SOURCE.md](../evidence/WIKCIONARIO-SOURCE.md), [manifest](../evidence/eswiktionary-mexico.manifest.json).

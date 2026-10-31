@@ -86,3 +86,7 @@ CI and versioned study packages include a **separate** `mexico-dialogue-frequenc
 ## Full-corpus upgrade simulation
 
 The corpus CI workflow also creates a **temporary** revised study snapshot from the real 124,444-entry export using a dependency-free Node script. It exercises a changed English gloss, altered sense annotations, new word forms, a newly added sense, a replaced entry ID, and a missing entry. A new reconciliation JSONL report is checked for flagged and unchanged records. This is a regression simulation, **not evidence of validation against two distinct upstream Wiktionary editions**; the latter remains a release criterion before automatic trainer upgrades.
+
+## Supplemental Wikcionario Mexico-word evidence (future packages)
+
+Future study-export builds also bundle `wikcionario-mexico.jsonl`, its source manifest, and `WIKCIONARIO-SOURCE.md` with CC BY-SA/GFDL credit. Each `[word, POS, tagged_sense_count, matched]` record describes **a Spanish Wiktionary spelling with independent Mexico-tagged senses**. It does not map to a particular English Wiktionary meaning and must never trigger a trainer to change an English sense-level region label or erase review history. The published `lex-v0.1.0` archive predates this source; the additional data will be included in a future release, not retroactively inserted into v0.1.0.
