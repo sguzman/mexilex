@@ -73,6 +73,8 @@ The comparison emits a **non-destructive, one-row-per-previous-entry JSONL repor
 - `id_conflict`: an existing entry ID unexpectedly points to a different headword, part of speech, etymology, or source. Never treat that as a safe match.
 - `missing`: no match is found. Historical review events should remain in the trainer, marked as referring to an older snapshot.
 
+**Important:** An `exact` entry-ID match is not automatically a safe content match. Each report row now has `requires_review`. Only `false` means that the old meanings, annotations, forms, and sense set are unchanged. New meanings, modified examples/tags, changed forms, gloss edits, missing senses, and ambiguous matches all set it to `true`. The report identifies `changed_annotation`, `changed_definition`, and `missing` sense statuses, plus `added_sense_ids` and `forms_changed`. The comparison still does not alter trainer data.
+
 For matched entries, individual old senses are tagged `same_definition`, `changed_definition`, or `missing` based on exact source sense ID and definition. There is no fuzzy semantic matching and no automatic deletion of review history. Both inputs must be compatible version-one Mexilex study exports in the `es-MX` → `en` contract. The command refuses to overwrite an existing reconciliation report.
 
 The build pipeline also compares a full study export to itself, verifying that the complete current snapshot yields exact matches only. Real-world cross-version testing remains a separate acceptance criterion before trainer synchronization is enabled.
@@ -80,3 +82,7 @@ The build pipeline also compares a full study export to itself, verifying that t
 ## Mexican film-dialogue frequency for study prioritization
 
 CI and versioned study packages include a **separate** `mexico-dialogue-frequency.jsonl` sidecar with 12,528 Mexico-attested non-form-only headword spellings. The same package includes `mexico-dialogue-frequency-manifest.json` and GPL-2.0 license text. The trainer may use these rates to *prioritize study candidates*, but must not reinterpret a film-dialogue frequency as a `mexican_usage` sense annotation or overwrite personal progress. The stable version-one `study.jsonl` schema is unchanged.
+
+## Full-corpus upgrade simulation
+
+The corpus CI workflow also creates a **temporary** revised study snapshot from the real 124,444-entry export using a dependency-free Node script. It exercises a changed English gloss, altered sense annotations, new word forms, a newly added sense, a replaced entry ID, and a missing entry. A new reconciliation JSONL report is checked for flagged and unchanged records. This is a regression simulation, **not evidence of validation against two distinct upstream Wiktionary editions**; the latter remains a release criterion before automatic trainer upgrades.
