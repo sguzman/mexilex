@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: mexilex-mexican-evidence
@@ -35,15 +36,17 @@ jobs:
           cargo test --all-targets
       - name: Retain only Mexico-attested exact surface headwords from Git corpus
         run: |
-          cargo run --release -- import-mx-frequency data/aes1grams.csv corpus evidence/activ-es-v02.jsonl
-          test -s evidence/activ-es-v02.jsonl
-          test -s evidence/activ-es-v02.manifest.json
-          grep -q '"source_commit"' evidence/activ-es-v02.manifest.json
-          test "$(wc -l < evidence/activ-es-v02.jsonl)" -gt 3000
-          grep -q '"casa"' evidence/activ-es-v02.jsonl
-          du -h evidence/activ-es-v02.jsonl
+          cargo run --release -- import-mx-frequency data/aes1grams.csv corpus data/frequency-rebuilt.jsonl
+          test -s data/frequency-rebuilt.jsonl
+          test -s data/frequency-rebuilt.manifest.json
+          grep -q '"source_commit"' data/frequency-rebuilt.manifest.json
+          test "$(wc -l < data/frequency-rebuilt.jsonl)" -gt 3000
+          grep -q '"casa"' data/frequency-rebuilt.jsonl
+          du -h data/frequency-rebuilt.jsonl
       - name: Commit derived frequency evidence separately from lexicon
         run: |
+          cp data/frequency-rebuilt.jsonl evidence/activ-es-v02.jsonl
+          cp data/frequency-rebuilt.manifest.json evidence/activ-es-v02.manifest.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- evidence/activ-es-v02.jsonl evidence/activ-es-v02.manifest.json
@@ -53,4 +56,7 @@ jobs:
             git commit -m "data: record licensed Mexico dialogue frequency sidecar"
             git pull --rebase origin main
             git push origin HEAD:main
+            gh workflow run site.yml --ref main
           fi
+        env:
+          GH_TOKEN: ${{ github.token }}
