@@ -5,7 +5,7 @@
 //! candidate with matching word, POS, etymology number and source edition,
 //! but this is deliberately marked for review, not silently migrated.
 use serde_json::{json, Value};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, BufWriter, Write};
