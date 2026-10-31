@@ -54,16 +54,12 @@ fn run() -> Result<()> {
             if args.next().is_some() {
                 return Err(usage().into());
             }
-            let connection = Connection::open_with_flags(
-                db,
-                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-            )?;
-            let entries: i64 = connection.query_row(
-                "SELECT COUNT(*) FROM entries", [], |row| row.get(0),
-            )?;
-            let senses: i64 = connection.query_row(
-                "SELECT COUNT(*) FROM senses", [], |row| row.get(0),
-            )?;
+            let connection =
+                Connection::open_with_flags(db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+            let entries: i64 =
+                connection.query_row("SELECT COUNT(*) FROM entries", [], |row| row.get(0))?;
+            let senses: i64 =
+                connection.query_row("SELECT COUNT(*) FROM senses", [], |row| row.get(0))?;
             let mexican: i64 = connection.query_row(
                 "SELECT COUNT(*) FROM senses WHERE mexican_usage = 1",
                 [],
@@ -77,25 +73,23 @@ fn run() -> Result<()> {
             if args.next().is_some() {
                 return Err(usage().into());
             }
-            let connection = Connection::open_with_flags(
-                db,
-                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-            )?;
+            let connection =
+                Connection::open_with_flags(db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
             lookup(&connection, &word)?;
         }
         "export-tsv" => {
             let db = args.next().ok_or_else(usage)?;
             let output = args.next().ok_or_else(usage)?;
             let filter = args.next();
-            if filter.as_deref().is_some_and(|flag| flag != "--mexican-only")
+            if filter
+                .as_deref()
+                .is_some_and(|flag| flag != "--mexican-only")
                 || args.next().is_some()
             {
                 return Err(usage().into());
             }
-            let connection = Connection::open_with_flags(
-                db,
-                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-            )?;
+            let connection =
+                Connection::open_with_flags(db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
             let out = BufWriter::new(File::create(output)?);
             export_tsv(&connection, out, filter.is_some())?;
         }
@@ -118,10 +112,14 @@ fn open_source(path: &str) -> Result<Box<dyn BufRead>> {
 }
 
 fn strings(value: Option<&Value>) -> Vec<String> {
-    value.and_then(Value::as_array).into_iter().flatten()
+    value
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
         .filter_map(Value::as_str)
         .filter(|item| !item.trim().is_empty())
-        .map(str::to_owned).collect()
+        .map(str::to_owned)
+        .collect()
 }
 
 fn encoded(value: Option<&Value>) -> String {
@@ -133,8 +131,12 @@ fn tagged_mexican(sense: &Value) -> bool {
         strings(sense.get(*name)).iter().any(|tag| {
             matches!(
                 tag.trim().to_ascii_lowercase().as_str(),
-                "mexico" | "mexican" | "mexican spanish" | "mexico city"
-                | "mexican-spanish" | "mexico city spanish"
+                "mexico"
+                    | "mexican"
+                    | "mexican spanish"
+                    | "mexico city"
+                    | "mexican-spanish"
+                    | "mexico city spanish"
             )
         })
     })
@@ -193,9 +195,8 @@ fn import_reader<R: BufRead>(connection: &mut Connection, reader: R) -> Result<C
                 continue;
             }
             counts.lines += 1;
-            let record: Value = serde_json::from_str(&line).map_err(|error| {
-                format!("invalid JSONL at source line {}: {error}", offset + 1)
-            })?;
+            let record: Value = serde_json::from_str(&line)
+                .map_err(|error| format!("invalid JSONL at source line {}: {error}", offset + 1))?;
             if record.get("lang_code").and_then(Value::as_str) != Some("es") {
                 continue;
             }
@@ -208,47 +209,67 @@ fn import_reader<R: BufRead>(connection: &mut Connection, reader: R) -> Result<C
                 counts.skipped_without_definition += 1;
                 continue;
             }
-            let pos = record.get("pos").and_then(Value::as_str).unwrap_or("unknown");
+            let pos = record
+                .get("pos")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown");
             let etymology = record.get("etymology_number").and_then(Value::as_i64);
             let ety_text = etymology.map(|n| n.to_string()).unwrap_or_default();
             let Some(senses) = record.get("senses").and_then(Value::as_array) else {
                 counts.skipped_without_definition += 1;
                 continue;
             };
-            let useful: Vec<(usize, &Value, Vec<String>)> = senses.iter().enumerate()
+            let useful: Vec<(usize, &Value, Vec<String>)> = senses
+                .iter()
+                .enumerate()
                 .filter_map(|(index, sense)| {
                     let glosses = strings(sense.get("glosses"));
-                    if glosses.is_empty() { None } else { Some((index, sense, glosses)) }
-                }).collect();
+                    if glosses.is_empty() {
+                        None
+                    } else {
+                        Some((index, sense, glosses))
+                    }
+                })
+                .collect();
             if useful.is_empty() {
                 counts.skipped_without_definition += 1;
                 continue;
             }
             // Source-stable when the lexical identity and first gloss remain unchanged.
             // Future synchronization must reconcile changed identities before migrating reviews.
-            let entry_key = fingerprint(&[
-                EDITION, "es", word, pos, &ety_text, &useful[0].2[0],
-            ]);
+            let entry_key = fingerprint(&[EDITION, "es", word, pos, &ety_text, &useful[0].2[0]]);
             let inserted = insert_entry.execute(params![
-                entry_key, word, pos, etymology,
-                encoded(record.get("forms")), encoded(record.get("tags")),
-                EDITION, (offset + 1) as i64,
+                entry_key,
+                word,
+                pos,
+                etymology,
+                encoded(record.get("forms")),
+                encoded(record.get("tags")),
+                EDITION,
+                (offset + 1) as i64,
             ])?;
             if inserted != 0 {
                 counts.entries += 1;
             }
             for (index, sense, glosses) in useful {
                 let primary_gloss = glosses.join("; ");
-                let sense_key = sense.get("id").and_then(Value::as_str)
+                let sense_key = sense
+                    .get("id")
+                    .and_then(Value::as_str)
                     .map(str::to_owned)
-                    .unwrap_or_else(|| fingerprint(&[
-                        &entry_key, &index.to_string(), &primary_gloss,
-                    ]));
+                    .unwrap_or_else(|| {
+                        fingerprint(&[&entry_key, &index.to_string(), &primary_gloss])
+                    });
                 let mexican = tagged_mexican(sense);
                 let inserted = insert_sense.execute(params![
-                    sense_key, entry_key, index as i64, primary_gloss,
-                    json!(glosses).to_string(), encoded(sense.get("tags")),
-                    encoded(sense.get("raw_tags")), encoded(sense.get("examples")),
+                    sense_key,
+                    entry_key,
+                    index as i64,
+                    primary_gloss,
+                    json!(glosses).to_string(),
+                    encoded(sense.get("tags")),
+                    encoded(sense.get("raw_tags")),
+                    encoded(sense.get("examples")),
                     i64::from(mexican),
                 ])?;
                 if inserted != 0 {
@@ -281,8 +302,10 @@ fn lookup(connection: &Connection, word: &str) -> Result<()> {
     let mut found = false;
     for result in results {
         let (word, pos, definition, mexican) = result?;
-        println!("{word} [{pos}]{}: {definition}",
-            if mexican { " [Mexico]" } else { "" });
+        println!(
+            "{word} [{pos}]{}: {definition}",
+            if mexican { " [Mexico]" } else { "" }
+        );
         found = true;
     }
     if !found {
@@ -297,7 +320,10 @@ fn cell(value: &str) -> String {
 
 // The trainer owns review state. This export is stateless and may be regenerated.
 fn export_tsv<W: Write>(connection: &Connection, mut output: W, mexican_only: bool) -> Result<()> {
-    writeln!(output, "sense_key\tword_es\tpart_of_speech\tdefinition_en\tmexican_usage")?;
+    writeln!(
+        output,
+        "sense_key\tword_es\tpart_of_speech\tdefinition_en\tmexican_usage"
+    )?;
     let sql = if mexican_only {
         "SELECT s.key, e.word, e.pos, s.definition_en, s.mexican_usage
          FROM entries e JOIN senses s ON s.entry_key = e.key
@@ -310,15 +336,24 @@ fn export_tsv<W: Write>(connection: &Connection, mut output: W, mexican_only: bo
     let mut statement = connection.prepare(sql)?;
     let rows = statement.query_map([], |row| {
         Ok((
-            row.get::<_, String>(0)?, row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?, row.get::<_, String>(3)?,
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, String>(3)?,
             row.get::<_, i64>(4)?,
         ))
     })?;
     for row in rows {
         let (id, word, pos, definition, mexican) = row?;
-        writeln!(output, "{}\t{}\t{}\t{}\t{}", cell(&id),
-            cell(&word), cell(&pos), cell(&definition), mexican)?;
+        writeln!(
+            output,
+            "{}\t{}\t{}\t{}\t{}",
+            cell(&id),
+            cell(&word),
+            cell(&pos),
+            cell(&definition),
+            mexican
+        )?;
     }
     Ok(())
 }
@@ -351,7 +386,9 @@ mod tests {
         let mut db = Connection::open_in_memory().unwrap();
         import_reader(&mut db, Cursor::new(FIXTURE)).unwrap();
         import_reader(&mut db, Cursor::new(FIXTURE)).unwrap();
-        let count: i64 = db.query_row("SELECT COUNT(*) FROM senses", [], |r| r.get(0)).unwrap();
+        let count: i64 = db
+            .query_row("SELECT COUNT(*) FROM senses", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(count, 3);
     }
 
@@ -360,7 +397,9 @@ mod tests {
         let mut db = Connection::open_in_memory().unwrap();
         import_reader(&mut db, Cursor::new(FIXTURE)).unwrap();
         assert!(import_reader(&mut db, Cursor::new("{not json}\n")).is_err());
-        let count: i64 = db.query_row("SELECT COUNT(*) FROM senses", [], |r| r.get(0)).unwrap();
+        let count: i64 = db
+            .query_row("SELECT COUNT(*) FROM senses", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(count, 3);
     }
 
@@ -374,7 +413,13 @@ mod tests {
 
     #[test]
     fn ids_are_deterministic() {
-        assert_eq!(fingerprint(&["banqueta", "noun"]), fingerprint(&["banqueta", "noun"]));
-        assert_ne!(fingerprint(&["banqueta", "noun"]), fingerprint(&["banqueta", "verb"]));
+        assert_eq!(
+            fingerprint(&["banqueta", "noun"]),
+            fingerprint(&["banqueta", "noun"])
+        );
+        assert_ne!(
+            fingerprint(&["banqueta", "noun"]),
+            fingerprint(&["banqueta", "verb"])
+        );
     }
 }
