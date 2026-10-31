@@ -1,0 +1,222 @@
+"use strict";
+const REPOSITORY = "sguzman/mexilex";
+const root = document.documentElement;
+const byId = id => document.getElementById(id);
+const results = byId("results");
+const detail = byId("detail");
+const queryInput = byId("query");
+const mexicoOnly = byId("mexico-only");
+const includeForms = byId("include-forms");
+const cache = new Map();
+const fmt = new Intl.NumberFormat("en");
+let config = null;
+let selectedId = null;
+let sequence = 0;
+let activeSearch = [];
+
+const fold = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+function el(tag, className, text) {
+  const n = document.createElement(tag);
+  if (className) n.className = className;
+  if (text !== undefined) n.textContent = String(text);
+  return n;
+}
+function setTheme(theme) {
+  root.dataset.theme = theme === "system" ? "" : theme;
+  byId("theme").value = theme;
+  try { localStorage.setItem("mexilex-theme", theme); } catch (_) {}
+}
+let savedTheme = "system";
+try { savedTheme = localStorage.getItem("mexilex-theme") || "system"; } catch (_) {}
+setTheme(["system", "light", "dark"].includes(savedTheme) ? savedTheme : "system");
+byId("theme").addEventListener("change", event => setTheme(event.target.value));
+
+function displayEmpty(container, message) {
+  container.replaceChildren(el("p", "empty", message));
+}
+function updateLocation(q) {
+  const url = new URL(window.location.href);
+  if (q) url.searchParams.set("q", q);
+  else url.searchParams.delete("q");
+  history.replaceState(null, "", url);
+}
+function showStatus(message) { byId("result-count").textContent = message; }
+function bucketOf(q) {
+  const chars = Array.from(fold(q));
+  if (chars.length < 2) return null;
+  return chars.slice(0, 2).map(c => /^[a-z0-9]$/.test(c) ? c : "_").join("");
+}
+async function getIndex(bucket) {
+  if (cache.has(bucket)) return cache.get(bucket);
+  const promise = (async () => {
+    const response = await fetch("./index/" + bucket + ".json");
+    if (response.status === 404) return [];
+    if (!response.ok) throw new Error("Index fetch failed: " + response.status);
+    return response.json();
+  })();
+  cache.set(bucket, promise);
+  try { return await promise; } catch (err) { cache.delete(bucket); throw err; }
+}
+function resultMatches(record, q) {
+  return fold(record[0]).startsWith(q) && (!mexicoOnly.checked || record[4]) && (includeForms.checked || !record[5]);
+}
+function renderResults(matches, total) {
+  const fragment = document.createDocumentFragment();
+  matches.forEach(row => {
+    const btn = el("button", "result-row");
+    btn.type = "button";
+    btn.setAttribute("role", "listitem");
+    btn.setAttribute("aria-selected", String(row[1] === selectedId));
+    const head = el("div", "result-head");
+    head.append(el("span", "word", row[0]), el("span", "pos", row[2]));
+    if (row[4]) head.append(el("span", "tag", "MEXICO"));
+    btn.append(head, el("div", "preview", row[3]));
+    btn.addEventListener("click", () => selectEntry(row));
+    fragment.append(btn);
+  });
+  if (matches.length) results.replaceChildren(fragment);
+  else displayEmpty(results, "No matching entries. Try removing a filter or searching a different word.");
+  showStatus(total > matches.length ? `First ${matches.length} of ${fmt.format(total)}` : `${fmt.format(total)} result${total === 1 ? "" : "s"}`);
+}
+async function runSearch() {
+  const turn = ++sequence;
+  const query = queryInput.value.trim();
+  updateLocation(query);
+  selectedId = null;
+  activeSearch = [];
+  displayEmpty(detail, "Select an entry to inspect its individual meanings.");
+  const bucket = bucketOf(query);
+  if (!bucket) {
+    showStatus("Enter 2+ characters");
+    displayEmpty(results, "Enter at least two characters to search.");
+    return;
+  }
+  showStatus("Searching…");
+  try {
+    const index = await getIndex(bucket);
+    if (turn !== sequence) return;
+    const q = fold(query);
+    const matches = [];
+    let total = 0;
+    for (const row of index) {
+      if (!resultMatches(row, q)) continue;
+      total++;
+      if (matches.length < 80) matches.push(row);
+    }
+    activeSearch = matches;
+    renderResults(matches, total);
+    if (matches.length && (fold(matches[0][0]) === q || total === 1)) selectEntry(matches[0]);
+  } catch (error) {
+    if (turn !== sequence) return;
+    showStatus("Unavailable");
+    displayEmpty(results, "Could not retrieve the search index. Check your connection and try again.");
+  }
+}
+let timer;
+queryInput.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(runSearch, 160); });
+mexicoOnly.addEventListener("change", runSearch);
+includeForms.addEventListener("change", runSearch);
+document.querySelectorAll("[data-sample]").forEach(button => button.addEventListener("click", () => {
+  queryInput.value = button.dataset.sample;
+  runSearch();
+  queryInput.focus();
+}));
+document.addEventListener("keydown", event => {
+  if (event.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) {
+    event.preventDefault();
+    queryInput.focus();
+  }
+});
+
+function recordLink(word) {
+  return "https://en.wiktionary.org/wiki/" + encodeURIComponent(word) + "#Spanish";
+}
+function row(tag, text, className) { return el(tag, className || "", text); }
+function sourceLink(anchor, text, url) {
+  const link = row("a", text);
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  anchor.append(link);
+}
+async function selectEntry(selected) {
+  selectedId = selected[1];
+  Array.from(results.children).forEach((btn, i) => btn.setAttribute("aria-selected", String(activeSearch[i]?.[1] === selectedId)));
+  displayEmpty(detail, "Loading entry…");
+  try {
+    if (!config || !/^[0-9a-f]{40}$/.test(config.commit)) throw new Error("Missing pinned source revision");
+    const id = selected[1];
+    if (!/^[0-9a-f]{64}$/.test(id)) throw new Error("Invalid lexical identifier");
+    const path = `corpus/${id.slice(0, 2)}/${id.slice(2, 3)}.jsonl`;
+    const url = `https://raw.githubusercontent.com/${REPOSITORY}/${config.commit}/${path}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Unable to retrieve lexical shard");
+    let record = null;
+    const lines = (await response.text()).split("\n");
+    for (const line of lines) {
+      if (!line) continue;
+      const candidate = JSON.parse(line);
+      if (candidate.id === id) { record = candidate; break; }
+    }
+    if (selectedId !== id) return;
+    if (!record) throw new Error("The selected entry was not found in its source shard");
+    showEntry(record);
+  } catch (_) {
+    if (selectedId !== selected[1]) return;
+    const note = el("p", "empty", "This entry could not be loaded. The original Wiktionary entry is still available:");
+    const links = el("p", "entry-links");
+    sourceLink(links, "View source →", recordLink(selected[0]));
+    detail.replaceChildren(note, links);
+  }
+}
+function showEntry(record) {
+  const container = el("div", "detail-content");
+  const head = el("div", "detail-header");
+  const titlebox = el("div");
+  titlebox.append(row("h2", record.word), row("div", record.part_of_speech, "pos"));
+  head.append(titlebox);
+  container.append(head);
+  const senses = Array.isArray(record.senses) ? record.senses : [];
+  senses.forEach((sense, index) => {
+    const section = el("section", "sense");
+    const labels = el("div", "sense-tags");
+    labels.append(el("span", "pos", `MEANING ${index + 1}`));
+    if (sense.mexican_usage) labels.append(el("span", "tag", "MEXICO-SPECIFIC"));
+    section.append(labels, el("p", "sense-definition", sense.definition_en));
+    if (Array.isArray(sense.examples)) {
+      for (const sample of sense.examples.slice(0, 2)) {
+        if (!sample || typeof sample !== "object" || !sample.text) continue;
+        const example = el("div", "example");
+        example.append(row("span", sample.text));
+        if (sample.english) example.append(row("span", sample.english));
+        section.append(example);
+      }
+    }
+    container.append(section);
+  });
+  if (Array.isArray(record.forms) && record.forms.length) {
+    const forms = record.forms.slice(0, 12).map(form => form.form).filter(Boolean);
+    if (forms.length) container.append(el("p", "forms", "Related forms: " + forms.join(" · ")));
+  }
+  const links = el("div", "entry-links");
+  sourceLink(links, "Original Wiktionary entry ↗", recordLink(record.word));
+  sourceLink(links, "Lexical record on GitHub ↗", `https://github.com/${REPOSITORY}/blob/${config.commit}/corpus/${record.id.slice(0,2)}/${record.id[2]}.jsonl`);
+  container.append(links);
+  detail.replaceChildren(container);
+}
+async function initialize() {
+  try {
+    const response = await fetch("./config.json");
+    if (!response.ok) throw new Error("Missing site configuration");
+    config = await response.json();
+    byId("count-entries").textContent = fmt.format(config.entries);
+    byId("count-senses").textContent = fmt.format(config.senses);
+    byId("count-mexican").textContent = fmt.format(config.mexican_senses);
+    const q = new URL(window.location.href).searchParams.get("q");
+    if (q) { queryInput.value = q; runSearch(); }
+  } catch (_) {
+    showStatus("Unavailable");
+    displayEmpty(results, "Site data could not be loaded. Please try again.");
+  }
+}
+initialize();

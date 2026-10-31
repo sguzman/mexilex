@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Explore Spanish vocabulary used in Mexico, with English definitions and sourced regional labels.">
+  <title>Mexilex · Mexican Spanish lexical atlas</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell topbar">
+      <a class="brand" href="./" aria-label="Mexilex home">
+        <span class="brand-mark" aria-hidden="true">mx</span><span>mexilex<span class="dot">.</span></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#dictionary" aria-current="page">Dictionary</a>
+        <a href="https://github.com/sguzman/mexilex" target="_blank" rel="noopener noreferrer">Source ↗</a>
+        <label class="theme-label" for="theme">Theme</label>
+        <select id="theme" aria-label="Color theme">
+          <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
+        </select>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="hero" aria-labelledby="headline">
+      <div class="overline"><span class="pulse"></span> THE MEXICAN SPANISH LEXICON</div>
+      <h1 id="headline">The words of Mexico.<br><em>Explained in English.</em></h1>
+      <p class="hero-description">A growing, open lexical catalogue for discovering how Spanish words are used and what they mean. Every entry traces back to its dictionary source.</p>
+      <div class="metrics" aria-label="Corpus statistics">
+        <div><strong id="count-entries">—</strong><span>Lexical records</span></div>
+        <div><strong id="count-senses">—</strong><span>English meanings</span></div>
+        <div><strong id="count-mexican">—</strong><span>Mexico-tagged senses</span></div>
+      </div>
+    </section>
+    <section class="dictionary" id="dictionary" aria-labelledby="search-title">
+      <div class="section-head"><h2 id="search-title">Explore the dictionary</h2><span class="section-number">01 / LOOKUP</span></div>
+      <label class="search-label" for="query">Spanish word or prefix</label>
+      <div class="search-shell"><span class="search-glyph" aria-hidden="true">⌕</span><input id="query" name="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search, e.g. banqueta or chamba…" aria-describedby="search-help"><kbd aria-hidden="true">/</kbd></div>
+      <div class="search-options">
+        <label><input type="checkbox" id="mexico-only"><span>Show only Mexico-tagged senses</span></label>
+        <label><input type="checkbox" id="include-forms"><span>Include conjugated and inflected forms</span></label>
+      </div>
+      <p id="search-help" class="search-help">Enter at least two characters. Try <button class="sample" data-sample="banqueta">banqueta</button>, <button class="sample" data-sample="chamba">chamba</button>, or <button class="sample" data-sample="casa">casa</button>.</p>
+      <div class="explorer">
+        <section class="result-column" aria-label="Search results">
+          <div class="results-heading"><h3>Matches</h3><span id="result-count">Enter a word</span></div>
+          <div id="results" class="result-list" role="list" aria-live="polite"><p class="empty">Your dictionary is ready. Start with a Spanish word.</p></div>
+        </section>
+        <section class="detail-column" aria-label="Selected dictionary entry">
+          <div class="results-heading"><h3>Entry details</h3><span id="entry-origin">Wiktionary / Kaikki</span></div>
+          <article id="detail"><p class="empty">Select a result to see English meanings, usage labels, and examples.</p></article>
+        </section>
+      </div>
+      <aside class="scope-note"><strong>A note on regionality.</strong> Mexico-specific labels come from the underlying source. General Spanish entries are included because they may also be used in Mexico; an unlabeled meaning is <em>not</em> a claim that it is absent from Mexican Spanish.</aside>
+    </section>
+  </main>
+  <footer class="footer shell"><div><strong>mexilex.</strong><span>One language. One bounded lexical catalogue.</span></div><div>Dictionary text: <a href="https://en.wiktionary.org/wiki/Wiktionary:Copyrights" target="_blank" rel="noopener noreferrer">Wiktionary contributors · CC BY-SA / GFDL</a><br>Extracted via <a href="https://kaikki.org/" target="_blank" rel="noopener noreferrer">Kaikki / Wiktextract</a>. Code: MIT.</div></footer>
+</body>
+</html>
