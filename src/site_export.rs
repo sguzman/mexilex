@@ -5,6 +5,7 @@
 //! platform's published-site size limit.
 use crate::corpus_load;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs::{self, File};
@@ -206,6 +207,47 @@ fn load_wikcionario_mexico(corpus: &Path) -> Result<BTreeMap<String, usize>> {
     Ok(by_word)
 }
 
+
+fn load_mexican_radio(corpus: &Path) -> Result<BTreeMap<String, [u64; 2]>> {
+    let base = corpus.parent().unwrap_or_else(|| Path::new("."));
+    let path = base.join("evidence/ciempiess-light-frequency.jsonl");
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let manifest: Value = serde_json::from_reader(File::open(
+        base.join("evidence/ciempiess-light-frequency.manifest.json"),
+    )?)?;
+    let data = fs::read(&path)?;
+    let checksum = format!("{:x}", Sha256::digest(&data));
+    if manifest["format_version"].as_u64() != Some(1)
+        || manifest["source_revision"].as_str()
+            != Some("e9e6dc556ba8479f54160701a7542a67de1fbe14")
+        || manifest["output_sha256"].as_str() != Some(checksum.as_str())
+    {
+        return Err("unrecognized or corrupted CIEMPIESS radio evidence".into());
+    }
+    let mut by_word = BTreeMap::new();
+    for line in String::from_utf8(data)?.lines() {
+        let row: Value = serde_json::from_str(line)?;
+        let fields = row.as_array().ok_or("invalid CIEMPIESS evidence row")?;
+        if fields.len() != 3 {
+            return Err("expected three CIEMPIESS frequency fields".into());
+        }
+        let word = fields[0].as_str().ok_or("missing CIEMPIESS word")?;
+        let count = fields[1].as_u64().ok_or("missing CIEMPIESS frequency")?;
+        let utterances = fields[2].as_u64().ok_or("missing CIEMPIESS utterances")?;
+        if word.trim().is_empty() || count < 2 || utterances == 0 || utterances > count
+            || by_word.insert(word.to_owned(), [count, utterances]).is_some()
+        {
+            return Err("invalid or duplicate CIEMPIESS radio evidence".into());
+        }
+    }
+    if manifest["published_surface_tokens"].as_u64() != Some(by_word.len() as u64) {
+        return Err("CIEMPIESS radio evidence count differs from manifest".into());
+    }
+    Ok(by_word)
+}
+
 pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Result<SiteStats> {
     if commit.len() != 40 || !commit.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err("expected a full 40-digit Git commit SHA".into());
@@ -231,6 +273,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     let mut inflection_groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
     let frequency = load_mexican_frequency(corpus)?;
     let wikcionario_mexico = load_wikcionario_mexico(corpus)?;
+    let radio_frequency = load_mexican_radio(corpus)?;
     let mut stats = SiteStats::default();
     let mut mexican_browse: Vec<Value> = Vec::new();
     let mut dialogue_browse: BTreeMap<String, Value> = BTreeMap::new();
@@ -359,6 +402,12 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         destination.join("dialogue.json"),
         format!("{}\n", serde_json::to_string(&spoken)?),
     )?;
+    // A lazy-loaded separate word-frequency evidence map. No changes to
+    // lexical senses, search index row schema or Mexico-specific labels.
+    fs::write(
+        destination.join("radio.json"),
+        format!("{}\n", serde_json::to_string(&radio_frequency)?),
+    )?;
     for (name, content) in [
         ("index.html", include_str!("../site/index.html")),
         ("style.css", include_str!("../site/style.css")),
@@ -374,6 +423,10 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
             "wikcionario-source.txt",
             include_str!("../evidence/WIKCIONARIO-SOURCE.md"),
         ),
+        (
+            "mexico-radio-source.txt",
+            include_str!("../evidence/CIEMPIESS-SOURCE.md"),
+        ),
     ] {
         fs::write(destination.join(name), content)?;
     }
@@ -388,6 +441,8 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         "inflected_entries": stats.inflected_entries,
         "mexico_dialogue_headwords": frequency.len(),
         "wikcionario_mexico_headwords": wikcionario_mexico.len(),
+        "radio_evidence_spellings": radio_frequency.len(),
+        "radio_evidence_utterances": 16663,
         "frequency_source": if frequency.is_empty() { Value::Null } else { json!("ACTIV-ES v0.2, Mexican film dialogue; GPL-2.0") },
         "dictionary_language": "es-MX",
         "definition_language": "en"
@@ -493,6 +548,15 @@ mod tests {
             "{\"format_version\":1,\"source_edition\":\"eswiktionary\",\"distinct_word_pos\":3,\"source_senses\":3,\"matched_spellings\":2}",
         )
         .unwrap();
+        let radio_data = "[\"casa\",3,2]\n[\"niño\",2,2]\n";
+        fs::write(evidence.join("ciempiess-light-frequency.jsonl"), radio_data).unwrap();
+        fs::write(
+            evidence.join("ciempiess-light-frequency.manifest.json"),
+            format!(
+                "{{\"format_version\":1,\"source_revision\":\"e9e6dc556ba8479f54160701a7542a67de1fbe14\",\"published_surface_tokens\":2,\"output_sha256\":\"{:x}\"}}",
+                Sha256::digest(radio_data.as_bytes())
+            ),
+        ).unwrap();
         build_site(&corpus, &site, &"e".repeat(40)).unwrap();
         let banqueta: Value =
             serde_json::from_reader(File::open(site.join("index/ba.json")).unwrap()).unwrap();
@@ -502,6 +566,10 @@ mod tests {
             serde_json::from_reader(File::open(site.join("config.json")).unwrap()).unwrap();
         assert_eq!(config["mexico_dialogue_headwords"], 2);
         assert_eq!(config["wikcionario_mexico_headwords"], 2);
+        assert_eq!(config["radio_evidence_spellings"], 2);
+        let radio: Value = serde_json::from_reader(File::open(site.join("radio.json")).unwrap()).unwrap();
+        assert_eq!(radio["casa"], json!([3, 2]));
+        assert!(radio["banqueta"].is_null());
         assert_eq!(banqueta[0][7], true);
         assert_eq!(casa[0][7], true);
         assert_eq!(banqueta[0][6][0], 1.06);
@@ -515,6 +583,7 @@ mod tests {
         assert_eq!(dialogue[0][4], false);
         assert!(site.join("mexico-frequency-license.txt").exists());
         assert!(site.join("wikcionario-source.txt").exists());
+        assert!(site.join("mexico-radio-source.txt").exists());
         fs::write(
             evidence.join("activ-es-v02.manifest.json"),
             "{\"format_version\":1,\"source_commit\":\"wrong\",\"attested_mexico\":2}",
