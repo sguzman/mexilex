@@ -176,6 +176,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     let frequency = load_mexican_frequency(corpus)?;
     let mut stats = SiteStats::default();
     let mut mexican_browse: Vec<Value> = Vec::new();
+    let mut dialogue_browse: BTreeMap<String, Value> = BTreeMap::new();
 
     for path in corpus_load::shards(corpus)? {
         for (line_index, line) in BufReader::new(File::open(&path)?).lines().enumerate() {
@@ -221,6 +222,18 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                         false
                     ]));
                 }
+                if !form {
+                    if let Some(rate) = frequency.get(&word.to_lowercase()) {
+                        let candidate = json!([
+                            word, id, str_field(&record, "part_of_speech")?,
+                            gloss.chars().take(140).collect::<String>(), mexican, false, rate
+                        ]);
+                        let slot = dialogue_browse.entry(word.to_lowercase()).or_insert(Value::Null);
+                        if slot.is_null() || (mexican && slot[4] != true) {
+                            *slot = candidate;
+                        }
+                    }
+                }
                 let target = if form {
                     &mut inflection_groups
                 } else {
@@ -261,6 +274,18 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     fs::write(
         destination.join("mexico.json"),
         format!("{}\n", serde_json::to_string(&mexican_browse)?),
+    )?;
+    // Top attested headwords are distinct from Mexico-specific sense labels.
+    let mut spoken: Vec<Value> = dialogue_browse.into_values().collect();
+    spoken.sort_unstable_by(|a, b| {
+        b[6][0].as_f64().unwrap_or(0.0)
+            .total_cmp(&a[6][0].as_f64().unwrap_or(0.0))
+            .then(normalize(a[0].as_str().unwrap_or("")).cmp(&normalize(b[0].as_str().unwrap_or(""))))
+    });
+    spoken.truncate(500);
+    fs::write(
+        destination.join("dialogue.json"),
+        format!("{}\n", serde_json::to_string(&spoken)?),
     )?;
     for (name, content) in [
         ("index.html", include_str!("../site/index.html")),
@@ -393,6 +418,11 @@ mod tests {
         assert_eq!(banqueta[0][4], true);
         assert_eq!(casa[0][6][0], 120.12);
         assert_eq!(casa[0][4], false); // frequency is not a Mexico-specific sense
+        let dialogue: Value =
+            serde_json::from_reader(File::open(site.join("dialogue.json")).unwrap()).unwrap();
+        assert_eq!(dialogue[0][0], "casa");
+        assert_eq!(dialogue[1][0], "banqueta");
+        assert_eq!(dialogue[0][4], false);
         assert!(site.join("mexico-frequency-license.txt").exists());
         fs::write(
             evidence.join("activ-es-v02.manifest.json"),

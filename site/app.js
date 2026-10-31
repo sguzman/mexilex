@@ -111,6 +111,7 @@ async function runSearch() {
     displayEmpty(results, "Could not retrieve the search index. Check your connection and try again.");
   }
 }
+let mexicanDialogueCache;
 let mexicoBrowseCache;
 byId("browse-mexico").addEventListener("click", async () => {
   const turn = ++sequence;
@@ -141,6 +142,31 @@ byId("browse-mexico").addEventListener("click", async () => {
     if (turn !== sequence) return;
     showStatus("Unavailable");
     displayEmpty(results, "Could not load Mexico-tagged vocabulary. Try searching a word.");
+  }
+});
+byId("browse-dialogue").addEventListener("click", async () => {
+  const turn = ++sequence;
+  queryInput.value = "";
+  updateLocation("");
+  mexicoOnly.checked = false;
+  includeForms.checked = false;
+  rankMexico.checked = true;
+  selectedId = null;
+  displayEmpty(detail, "Choose a word attested in Mexican film dialogue to inspect its meanings and frequency.");
+  showStatus("Loading…");
+  try {
+    if (!mexicanDialogueCache) {
+      const response = await fetch("./dialogue.json");
+      if (!response.ok) throw new Error("No dialogue frequency index");
+      mexicanDialogueCache = await response.json();
+    }
+    if (turn !== sequence) return;
+    activeSearch = mexicanDialogueCache.slice(0, 60);
+    renderResults(activeSearch, mexicanDialogueCache.length);
+  } catch (_) {
+    if (turn !== sequence) return;
+    showStatus("Unavailable");
+    displayEmpty(results, "Could not load the film-dialogue vocabulary index. Try searching a word.");
   }
 });
 let timer;
