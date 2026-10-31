@@ -70,6 +70,7 @@ The comparison emits a **non-destructive, one-row-per-previous-entry JSONL repor
 - `exact`: the lexical ID still exists in the new snapshot. Individual senses are checked for equal English definitions.
 - `candidate_review`: the old ID disappeared but precisely one new entry has the same source edition, Spanish headword, part of speech, and etymology number. **Never auto-migrate this candidate without review.**
 - `ambiguous`: multiple lexical entries share those fallback attributes. Candidate IDs are included; none is selected.
+- `id_conflict`: an existing entry ID unexpectedly points to a different headword, part of speech, etymology, or source. Never treat that as a safe match.
 - `missing`: no match is found. Historical review events should remain in the trainer, marked as referring to an older snapshot.
 
 For matched entries, individual old senses are tagged `same_definition`, `changed_definition`, or `missing` based on exact source sense ID and definition. There is no fuzzy semantic matching and no automatic deletion of review history. Both inputs must be compatible version-one Mexilex study exports in the `es-MX` → `en` contract. The command refuses to overwrite an existing reconciliation report.

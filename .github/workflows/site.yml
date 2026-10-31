@@ -5,7 +5,12 @@ on:
     branches: [main]
     paths:
       - "site/**"
-      - "src/**"
+      - "src/site_export.rs"
+      - "src/lexical.rs"
+      - "src/corpus_load.rs"
+      - "src/corpus.rs"
+      - "src/main.rs"
+      - "tests/site-search.test.mjs"
       - "corpus/**"
       - "Cargo.toml"
       - ".github/workflows/site.yml"
