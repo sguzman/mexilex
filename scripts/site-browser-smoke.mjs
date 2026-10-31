@@ -167,7 +167,22 @@ try {
       mexicoCount: document.querySelectorAll("#results .result-row").length,
     };
   })()`);
-  console.log("PASS live desktop and mobile Chromium UI", JSON.stringify({desktop, mobile}));
+  // Test narrow phones separately: an emulated 390px phone can conceal a
+  // cramped or horizontally overflowing 320px header.
+  await viewport(320, 640, true);
+  await navigate();
+  const narrow = await evaluate(`(() => {
+    const width = document.documentElement.scrollWidth;
+    const viewport = window.innerWidth;
+    const flag = document.querySelector(".mexico-brand-flag");
+    const explore = document.querySelector("#browse-mexico");
+    if (!flag || flag.getBoundingClientRect().width === 0 || !explore) {
+      throw Error("Narrow mobile header or dictionary controls are missing");
+    }
+    if (width > viewport + 2) throw Error("Narrow phone horizontal overflow: " + width + " > " + viewport);
+    return {viewport, pageWidth: width};
+  })()`);
+  console.log("PASS live desktop and mobile Chromium UI", JSON.stringify({desktop, mobile, narrow}));
 } finally {
   socket?.close();
   processChrome.kill("SIGKILL");
