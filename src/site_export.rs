@@ -141,10 +141,13 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
             let Some(first_sense) = senses.first() else {
                 return Err("entry is missing all senses".into());
             };
-            let gloss = str_field(first_sense, "definition_en")?;
-            let mexican = senses
+            let mexican_sense = senses
                 .iter()
-                .any(|sense| sense.get("mexican_usage").and_then(Value::as_bool) == Some(true));
+                .find(|sense| sense.get("mexican_usage").and_then(Value::as_bool) == Some(true));
+            // Search previews for Mexico-tagged entries must show the Mexican
+            // meaning, not an unrelated generic sense that happens to come first.
+            let gloss = str_field(mexican_sense.unwrap_or(first_sense), "definition_en")?;
+            let mexican = mexican_sense.is_some();
             let form = crate::lexical::is_form(senses);
             stats.entries += 1;
             if mexican {
@@ -319,6 +322,24 @@ mod tests {
         assert_eq!(inflections[0][0], "caminé");
         assert_eq!(headwords[0][5], false);
         assert_eq!(inflections[0][5], true);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn mexico_previews_prefer_explicitly_regional_sense_even_if_it_is_not_first() {
+        let mut db = Connection::open_in_memory().unwrap();
+        let fixture = r#"{"lang_code":"es","word":"banqueta","pos":"noun","senses":[{"glosses":["footstool"],"tags":[]},{"glosses":["sidewalk"],"tags":["Mexico"]}]}"#;
+        crate::import_reader(&mut db, Cursor::new(fixture)).unwrap();
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("mexilex-regional-preview-{}-{nanos}", std::process::id()));
+        let source = root.join("corpus");
+        let site = root.join("site");
+        crate::corpus::export_corpus(&db, &source).unwrap();
+        build_site(&source, &site, &"b".repeat(40)).unwrap();
+        let idx: Value = serde_json::from_reader(File::open(site.join("index/ba.json")).unwrap()).unwrap();
+        let browse: Value = serde_json::from_reader(File::open(site.join("mexico.json")).unwrap()).unwrap();
+        assert_eq!(idx[0][3], "sidewalk");
+        assert_eq!(browse[0][3], "sidewalk");
         fs::remove_dir_all(root).unwrap();
     }
 
