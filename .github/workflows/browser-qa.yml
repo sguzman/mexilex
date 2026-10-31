@@ -1,0 +1,34 @@
+name: Browser QA of public Mexican Spanish dictionary
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/browser-qa.yml"
+      - "scripts/site-browser-smoke.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify Chromium is installed
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+          elif command -v chromium >/dev/null 2>&1; then
+            chromium --version
+          else
+            echo "::error::Chromium unavailable on runner"
+            exit 1
+          fi
+      - name: Exercise actual live desktop and mobile UI with no mocks
+        run: node scripts/site-browser-smoke.mjs
