@@ -1,0 +1,27 @@
+Mexilex lexical-data snapshot lex-v0.2.0
+
+Publication intent: create a new, immutable GitHub Release from this exact
+main-branch commit after the release pipeline passes validation. Do not
+overwrite or replace the existing lex-v0.1.0 public assets.
+
+New relative to lex-v0.1.0:
+- Spanish Wiktionary (Wikcionario) explicitly Mexico-tagged word evidence,
+  distributed as a separate JSONL sidecar with source manifest and attribution.
+- 2,304 Mexico-tagged Spanish Wiktionary senses; 1,946 independent word/POS
+  records; 1,235 spellings matched to English-defined Mexilex headwords.
+
+Retained:
+- The existing English-Wiktionary Spanish lexical corpus and separate meanings
+- Stateless es-MX vocabulary exports in English, no review history
+- Independently licensed ACTIV-ES Mexican film-dialogue frequency records
+- Reconstructed SQLite, license notices, pinned Git commit and SHA-256 checksums
+
+The new word-level regional evidence does NOT assert that a particular
+English-Wiktionary meaning is Mexico-specific; the existing source-specific
+sense annotations remain untouched.
+
+Explicit single-use publication guard:
+- The workflow must run from this added release-intent path.
+- The commit message must be exactly: release: publish lex-v0.2.0
+- A failed build, archive check, publication or download check does not count
+  as a verified release.
