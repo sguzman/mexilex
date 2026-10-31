@@ -177,12 +177,19 @@ fn load_wikcionario_mexico(corpus: &Path) -> Result<BTreeMap<String, usize>> {
         }
         let word = cells[0].as_str().ok_or("missing Wikcionario spelling")?;
         let pos = cells[1].as_str().ok_or("missing Wikcionario POS")?;
-        let senses = cells[2].as_u64().ok_or("missing Wikcionario regional sense count")?;
-        let matched = cells[3].as_bool().ok_or("missing Wikcionario headword match")?;
+        let senses = cells[2]
+            .as_u64()
+            .ok_or("missing Wikcionario regional sense count")?;
+        let matched = cells[3]
+            .as_bool()
+            .ok_or("missing Wikcionario headword match")?;
         if word.trim().is_empty() || pos.trim().is_empty() || senses == 0 {
             return Err("invalid Wikcionario regional evidence".into());
         }
-        if seen.insert((word.to_owned(), pos.to_owned()), true).is_some() {
+        if seen
+            .insert((word.to_owned(), pos.to_owned()), true)
+            .is_some()
+        {
             return Err("duplicate Wikcionario word/POS".into());
         }
         all_senses += senses;
@@ -363,7 +370,10 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
             "mexico-frequency-license.txt",
             include_str!("../evidence/ACTIV-ES-LICENSE"),
         ),
-        ("wikcionario-source.txt", include_str!("../evidence/WIKCIONARIO-SOURCE.md")),
+        (
+            "wikcionario-source.txt",
+            include_str!("../evidence/WIKCIONARIO-SOURCE.md"),
+        ),
     ] {
         fs::write(destination.join(name), content)?;
     }
