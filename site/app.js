@@ -12,6 +12,7 @@ const rankMexico = byId("rank-mx");
 const cache = new Map();
 const fmt = new Intl.NumberFormat("en");
 let config = null;
+let radioEvidencePromise;
 let selectedId = null;
 let sequence = 0;
 let activeSearch = [];
@@ -220,6 +221,11 @@ async function selectEntry(selected) {
     if (selectedId !== id) return;
     if (!record) throw new Error("The selected entry was not found in its source shard");
     showEntry(record, selected[6], Boolean(selected[7]));
+    // The dictionary remains usable even if the optional radio evidence
+    // fails to load. Fetch its small separate map only after entry selection.
+    loadRadioEvidence().then(rows => {
+      if (selectedId === id) showRadioEvidence(record.word, rows[record.word.toLocaleLowerCase("es")]);
+    }).catch(() => {});
   } catch (_) {
     if (selectedId !== selected[1]) return;
     const note = el("p", "empty", "This entry could not be loaded. The original Wiktionary entry is still available:");
@@ -228,6 +234,29 @@ async function selectEntry(selected) {
     detail.replaceChildren(note, links);
   }
 }
+async function loadRadioEvidence() {
+  if (!radioEvidencePromise) {
+    radioEvidencePromise = fetch("./radio.json").then(response => {
+      if (!response.ok) throw new Error("Mexican radio evidence unavailable");
+      return response.json();
+    });
+  }
+  return radioEvidencePromise;
+}
+
+function showRadioEvidence(word, counts) {
+  if (!Array.isArray(counts) || counts.length !== 2
+      || !Number.isSafeInteger(counts[0]) || !Number.isSafeInteger(counts[1])) return;
+  const container = detail.querySelector(".detail-content");
+  if (!container || container.querySelector(".radio-evidence")) return;
+  const evidence = el("section", "frequency-evidence radio-evidence");
+  evidence.append(el("strong", "", "Attested in Mexican radio conversations"));
+  evidence.append(el("p", "", `${fmt.format(counts[0])} occurrences in ${fmt.format(counts[1])} separate spoken segments.`));
+  evidence.append(el("small", "", "CIEMPIESS LIGHT · UNAM radio interviews (mainly legal and university topics). Surface spelling, not a Mexico-specific meaning or general population frequency."));
+  sourceLink(evidence, "Source and CC BY-SA 4.0 attribution ↗", "./mexico-radio-source.txt");
+  container.append(evidence);
+}
+
 function showEntry(record, dialogueFrequency, wikcionarioMx) {
   const container = el("div", "detail-content");
   const head = el("div", "detail-header");
