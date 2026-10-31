@@ -207,7 +207,6 @@ fn load_wikcionario_mexico(corpus: &Path) -> Result<BTreeMap<String, usize>> {
     Ok(by_word)
 }
 
-
 fn load_mexican_radio(corpus: &Path) -> Result<BTreeMap<String, [u64; 2]>> {
     let base = corpus.parent().unwrap_or_else(|| Path::new("."));
     let path = base.join("evidence/ciempiess-light-frequency.jsonl");
@@ -220,8 +219,7 @@ fn load_mexican_radio(corpus: &Path) -> Result<BTreeMap<String, [u64; 2]>> {
     let data = fs::read(&path)?;
     let checksum = format!("{:x}", Sha256::digest(&data));
     if manifest["format_version"].as_u64() != Some(1)
-        || manifest["source_revision"].as_str()
-            != Some("e9e6dc556ba8479f54160701a7542a67de1fbe14")
+        || manifest["source_revision"].as_str() != Some("e9e6dc556ba8479f54160701a7542a67de1fbe14")
         || manifest["output_sha256"].as_str() != Some(checksum.as_str())
     {
         return Err("unrecognized or corrupted CIEMPIESS radio evidence".into());
@@ -236,8 +234,13 @@ fn load_mexican_radio(corpus: &Path) -> Result<BTreeMap<String, [u64; 2]>> {
         let word = fields[0].as_str().ok_or("missing CIEMPIESS word")?;
         let count = fields[1].as_u64().ok_or("missing CIEMPIESS frequency")?;
         let utterances = fields[2].as_u64().ok_or("missing CIEMPIESS utterances")?;
-        if word.trim().is_empty() || count < 2 || utterances == 0 || utterances > count
-            || by_word.insert(word.to_owned(), [count, utterances]).is_some()
+        if word.trim().is_empty()
+            || count < 2
+            || utterances == 0
+            || utterances > count
+            || by_word
+                .insert(word.to_owned(), [count, utterances])
+                .is_some()
         {
             return Err("invalid or duplicate CIEMPIESS radio evidence".into());
         }
@@ -566,7 +569,8 @@ mod tests {
         assert_eq!(config["mexico_dialogue_headwords"], 2);
         assert_eq!(config["wikcionario_mexico_headwords"], 2);
         assert_eq!(config["radio_evidence_spellings"], 2);
-        let radio: Value = serde_json::from_reader(File::open(site.join("radio.json")).unwrap()).unwrap();
+        let radio: Value =
+            serde_json::from_reader(File::open(site.join("radio.json")).unwrap()).unwrap();
         assert_eq!(radio["casa"], json!([3, 2]));
         assert!(radio["banqueta"].is_null());
         assert_eq!(banqueta[0][7], true);
