@@ -54,3 +54,24 @@ The [Validate committed lexical corpus](../.github/workflows/validate-corpus.yml
 Each artifact also contains `manifest.json` with the source commit and language contract, `SHA256SUMS`, and `CORPUS-LICENSE.md`. This permits the future trainer to import a verified snapshot without cloning the entire source corpus or downloading Wiktionary.
 
 **Artifact retention is 14 days.** It is not a permanent release channel, and not an upload of personal review history. For durable public distribution, a later release workflow should publish these files with stable version names and checksums.
+
+## Comparing dictionary snapshots before upgrading a trainer
+
+Lexical IDs are derived from source content and may change across upstream refreshes. A trainer must **not** destroy or silently reassign learning history when that happens.
+
+Generate two exports from distinct versions of the corpus, then compare:
+
+```sh
+mexilex compare-study old-study.jsonl new-study.jsonl reconciliation.jsonl
+```
+
+The comparison emits a **non-destructive, one-row-per-previous-entry JSONL report**:
+
+- `exact`: the lexical ID still exists in the new snapshot. Individual senses are checked for equal English definitions.
+- `candidate_review`: the old ID disappeared but precisely one new entry has the same source edition, Spanish headword, part of speech, and etymology number. **Never auto-migrate this candidate without review.**
+- `ambiguous`: multiple lexical entries share those fallback attributes. Candidate IDs are included; none is selected.
+- `missing`: no match is found. Historical review events should remain in the trainer, marked as referring to an older snapshot.
+
+For matched entries, individual old senses are tagged `same_definition`, `changed_definition`, or `missing` based on exact source sense ID and definition. There is no fuzzy semantic matching and no automatic deletion of review history. Both inputs must be compatible version-one Mexilex study exports in the `es-MX` → `en` contract. The command refuses to overwrite an existing reconciliation report.
+
+The build pipeline also compares a full study export to itself, verifying that the complete current snapshot yields exact matches only. Real-world cross-version testing remains a separate acceptance criterion before trainer synchronization is enabled.

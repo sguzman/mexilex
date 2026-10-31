@@ -38,6 +38,13 @@ jobs:
           grep -q '"word":"banqueta"' data/study.jsonl
           cargo run --release -- export-study corpus data/mexican-study.jsonl --mexico-only
           test "$(wc -l < data/mexican-study.jsonl)" -gt 1000
+      - name: Verify conservative cross-snapshot identity on full corpus
+        run: |
+          cargo run --release -- compare-study data/study.jsonl data/study.jsonl data/self-compare.jsonl
+          test "$(wc -l < data/self-compare.jsonl)" -eq "$(wc -l < data/study.jsonl)"
+          ! grep -q '"status":"candidate_review"' data/self-compare.jsonl
+          ! grep -q '"status":"ambiguous"' data/self-compare.jsonl
+          ! grep -q '"status":"missing"' data/self-compare.jsonl
       - name: Package verified study exports with source and checksums
         run: |
           mkdir -p data/study-package
