@@ -35,6 +35,7 @@ pub(crate) struct CompareStats {
     pub(crate) exact: usize,
     pub(crate) candidate_review: usize,
     pub(crate) ambiguous: usize,
+    pub(crate) id_conflicts: usize,
     pub(crate) missing: usize,
     pub(crate) changed_definitions: usize,
     pub(crate) missing_senses: usize,
@@ -135,6 +136,7 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
 
     for entry in old.values() {
         let exact = new.get(&entry.id);
+        let collision = exact.is_some_and(|target| target.identity != entry.identity);
         let candidates: Vec<&Entry> = if exact.is_none() {
             by_identity
                 .get(&entry.identity)
@@ -143,7 +145,10 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
         } else {
             Vec::new()
         };
-        let (status, target) = if let Some(target) = exact {
+        let (status, target) = if collision {
+            stats.id_conflicts += 1;
+            ("id_conflict", None)
+        } else if let Some(target) = exact {
             stats.exact += 1;
             ("exact", Some(target))
         } else if candidates.len() == 1 {
@@ -316,6 +321,17 @@ mod tests {
         let duplicate = format!("{old}\n{old}");
         assert!(compare_readers(Cursor::new(&duplicate), Cursor::new(&old), Vec::new()).is_err());
         assert!(compare_readers(Cursor::new("not json"), Cursor::new(&old), Vec::new()).is_err());
+    }
+
+    #[test]
+    fn reused_entry_id_with_different_headword_is_not_treated_as_exact() {
+        let old = entry("same-id", "cura", "noun", &[("s1", "priest")]);
+        let new = entry("same-id", "curar", "verb", &[("s1", "to cure")]);
+        let (stats, report) = compare(&old, &new);
+        assert_eq!(stats.exact, 0);
+        assert_eq!(stats.id_conflicts, 1);
+        assert_eq!(report[0]["status"], "id_conflict");
+        assert_eq!(report[0]["new_entry_id"], Value::Null);
     }
 
     #[test]
