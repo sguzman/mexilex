@@ -71,7 +71,7 @@ try {
     const reply = await call("Runtime.evaluate", {
       expression, awaitPromise: true, returnByValue: true,
     });
-    if (reply.exceptionDetails) throw new Error("Browser exception: " + reply.exceptionDetails.text);
+    if (reply.exceptionDetails) throw new Error("Browser exception: " + (reply.exceptionDetails.exception?.description || reply.exceptionDetails.text));
     return reply.result.value;
   }
   async function viewport(width, height, mobile) {
