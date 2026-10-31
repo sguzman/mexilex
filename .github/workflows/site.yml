@@ -61,10 +61,6 @@ jobs:
           path: data/site/
 
   deploy:
-    # Enable Pages in Settings > Pages, choose "GitHub Actions", then set the
-    # repository variable MEXILEX_DEPLOY_PAGES=true. Until then the build and
-    # downloadable preview are available with no failing deployment job.
-    if: ${{ vars.MEXILEX_DEPLOY_PAGES == 'true' }}
     needs: build
     runs-on: ubuntu-latest
     permissions:
