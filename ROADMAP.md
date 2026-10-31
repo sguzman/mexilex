@@ -13,7 +13,7 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | 🟡 Mexican usage evidence enrichment | 15% | 60% | 2,115 English-Wiktionary Mexico-tagged senses, 12,528 headwords attested in Mexican film dialogue and **1,235 independently Mexico-tagged Spanish-Wiktionary spellings** matched to English-defined words, all with separate provenance and licensing; **broader representative written/spoken Mexican sources remain open** |
 | 🟡 Public website deployment | 10% | 99% | Public GitHub Pages verified in user's Firefox; HTTPS, index and source shard checks, plus live Chromium desktop/mobile browser regression tests now run automatically after deployment; **physical phone QA remains** |
 
-**Weighted progress: approximately 93% (+2 percentage points from the previous rounded 91% estimate).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 94% (previous rounded 91%; +2.25 percentage points on the unrounded weighted model, +3 after rounding).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 

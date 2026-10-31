@@ -33,3 +33,5 @@ A GitHub Actions [consumer check](../.github/workflows/verify-release.yml) downl
 ## Future release metadata: Wikcionario evidence
 
 After `lex-v0.1.0`, the release packaging pipeline now includes a separate `wikcionario-mexico.jsonl` word-evidence sidecar, a source-manifest checksum and `WIKCIONARIO-SOURCE.md` attribution. This supplementary source uses CC BY-SA/GFDL terms and is independent of both English Wiktionary glosses and GPL-2.0 film-frequency data. **The already-published v0.1.0 assets are immutable and do not include the new sidecar.** Publish it only with a new explicitly versioned release.
+
+The [v0.2-ready release preview workflow](https://github.com/sguzman/mexilex/actions/runs/41250676401) passed after adding the Spanish Wiktionary regional evidence sidecar and its attribution. This validates packaging only; **no new public GitHub Release has been created**, and `lex-v0.1.0` remains untouched.

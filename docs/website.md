@@ -68,3 +68,7 @@ The [no-npm Chromium CDP test](../scripts/site-browser-smoke.mjs) runs from GitH
 ## Separately attributed Spanish Wiktionary Mexico spellings
 
 An independently licensed **WIKCIONARIO MX** badge is generated for headword spellings that appear in Spanish Wiktionary with at least one explicitly Mexico-tagged sense. The source is a small, normalized, Git-tracked sidecar with a SHA-256 manifest and [CC BY-SA/GFDL attribution](../evidence/WIKCIONARIO-SOURCE.md). It contains 1,912 distinct normalized spellings; 1,235 match non-inflection-only English-defined headwords. The indicator and its detail-pane link do **not** identify an English sense as Mexican and never alter the existing Mexico-specific English definition badges. The rest are retained in the independent evidence data without manufacturing English definitions. Narrow mobile layouts use wrapping badges rather than horizontal overflow.
+
+### Live external regression evidence (2026-10-31)
+
+The site now displays **WIKCIONARIO MX** for source-verified word spellings such as `banqueta` while retaining the independently sourced English `sidewalk` meaning. The [public Pages deployment](https://github.com/sguzman/mexilex/actions/runs/41250676458) succeeded; the [real HTTP and Chromium check](https://github.com/sguzman/mexilex/actions/runs/41250901603) verified the `banqueta` search-row evidence, source link, normal meanings, desktop and narrow-phone layout. The [standalone no-mocks browser QA](https://github.com/sguzman/mexilex/actions/runs/41250901523) also passed.
