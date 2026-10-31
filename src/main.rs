@@ -5,6 +5,7 @@ mod lexical;
 mod reconcile;
 mod site_export;
 mod study_export;
+mod wikcionario;
 use flate2::read::MultiGzDecoder;
 use rusqlite::{params, Connection};
 use serde_json::{json, Value};
@@ -131,6 +132,16 @@ fn run() -> Result<()> {
             )?;
             println!("{result:#?}");
         }
+        "import-mx-wikcionario" => {
+            let source = args.next().ok_or_else(usage)?;
+            let corpus = args.next().ok_or_else(usage)?;
+            let destination = args.next().ok_or_else(usage)?;
+            if args.next().is_some() { return Err(usage().into()); }
+            let counts = wikcionario::import_file(
+                Path::new(&source), Path::new(&corpus), Path::new(&destination)
+            )?;
+            println!("{counts:#?}");
+        }
         "import-mx-frequency" => {
             let source = args.next().ok_or_else(usage)?;
             let corpus = args.next().ok_or_else(usage)?;
@@ -206,7 +217,7 @@ fn run() -> Result<()> {
 }
 
 fn usage() -> String {
-    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex build-site <corpus-dir> <empty-site-dir> <full-commit-sha>\n  mexilex export-study <corpus-dir> <new-study.jsonl> [--mexico-only] [--include-forms]\n  mexilex compare-study <previous-study.jsonl> <current-study.jsonl> <new-report.jsonl>\n  mexilex import-mx-frequency <source.csv> <corpus-dir> <new-evidence.jsonl>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
+    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex build-site <corpus-dir> <empty-site-dir> <full-commit-sha>\n  mexilex export-study <corpus-dir> <new-study.jsonl> [--mexico-only] [--include-forms]\n  mexilex compare-study <previous-study.jsonl> <current-study.jsonl> <new-report.jsonl>\n  mexilex import-mx-frequency <source.csv> <corpus-dir> <new-evidence.jsonl>\n  mexilex import-mx-wikcionario <source.jsonl> <corpus-dir> <new-evidence.jsonl>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
 }
 
 fn open_source(path: &str) -> Result<Box<dyn BufRead>> {

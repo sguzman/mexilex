@@ -42,7 +42,7 @@ fn rate(record: &StringRecord, index: usize, label: &str) -> Result<f64> {
     Ok(n)
 }
 
-fn known_headwords(corpus: &Path) -> Result<HashSet<String>> {
+pub(crate) fn known_headwords(corpus: &Path) -> Result<HashSet<String>> {
     let mut words = HashSet::new();
     for path in corpus_load::shards(corpus)? {
         for line in BufReader::new(File::open(path)?).lines() {
