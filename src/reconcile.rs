@@ -25,7 +25,8 @@ struct Identity {
 struct Entry {
     id: String,
     identity: Identity,
-    senses: BTreeMap<String, String>,
+    senses: BTreeMap<String, Value>,
+    forms: Value,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -38,7 +39,10 @@ pub(crate) struct CompareStats {
     pub(crate) id_conflicts: usize,
     pub(crate) missing: usize,
     pub(crate) changed_definitions: usize,
+    pub(crate) changed_annotations: usize,
     pub(crate) missing_senses: usize,
+    pub(crate) added_senses: usize,
+    pub(crate) changed_forms: usize,
     pub(crate) added_entries: usize,
 }
 
@@ -92,10 +96,11 @@ fn read_study<R: BufRead>(reader: R) -> Result<BTreeMap<String, Entry>> {
             if sense_id.is_empty() || gloss.is_empty() {
                 return Err(format!("empty sense ID or gloss at line {}", offset + 1).into());
             }
-            if senses.insert(sense_id, gloss).is_some() {
+            if senses.insert(sense_id, sense.clone()).is_some() {
                 return Err(format!("duplicate sense ID in entry at line {}", offset + 1).into());
             }
         }
+        let forms = row.get("forms").cloned().unwrap_or(Value::Null);
         if entries
             .insert(
                 id.clone(),
@@ -103,6 +108,7 @@ fn read_study<R: BufRead>(reader: R) -> Result<BTreeMap<String, Entry>> {
                     id,
                     identity,
                     senses,
+                    forms,
                 },
             )
             .is_some()
@@ -163,20 +169,42 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
         };
 
         let mut senses = Vec::new();
+        let mut added_sense_ids = Vec::new();
+        let mut requires_review = status != "exact";
+        let mut forms_changed = false;
         if let Some(target) = target {
-            for (id, old_gloss) in &entry.senses {
+            forms_changed = entry.forms != target.forms;
+            if forms_changed {
+                stats.changed_forms += 1;
+                requires_review = true;
+            }
+            for (id, old_sense) in &entry.senses {
                 match target.senses.get(id) {
-                    Some(new_gloss) if new_gloss == old_gloss => {
+                    Some(new_sense) if new_sense == old_sense => {
                         senses.push(json!({"old_id":id,"new_id":id,"status":"same_definition"}));
                     }
-                    Some(_) => {
+                    Some(new_sense) if new_sense["definition_en"] != old_sense["definition_en"] => {
                         stats.changed_definitions += 1;
+                        requires_review = true;
                         senses.push(json!({"old_id":id,"new_id":id,"status":"changed_definition"}));
+                    }
+                    Some(_) => {
+                        stats.changed_annotations += 1;
+                        requires_review = true;
+                        senses.push(json!({"old_id":id,"new_id":id,"status":"changed_annotation"}));
                     }
                     None => {
                         stats.missing_senses += 1;
+                        requires_review = true;
                         senses.push(json!({"old_id":id,"new_id":null,"status":"missing"}));
                     }
+                }
+            }
+            for new_id in target.senses.keys() {
+                if !entry.senses.contains_key(new_id) {
+                    added_sense_ids.push(new_id);
+                    stats.added_senses += 1;
+                    requires_review = true;
                 }
             }
         }
@@ -199,7 +227,10 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
             "candidate_ids":options,
             "old_sense_count":entry.senses.len(),
             "new_sense_count":target.map(|candidate|candidate.senses.len()),
-            "senses":senses
+            "senses":senses,
+            "added_sense_ids":added_sense_ids,
+            "forms_changed":forms_changed,
+            "requires_review":requires_review
         });
         serde_json::to_writer(&mut out, &row)?;
         out.write_all(b"\n")?;
@@ -276,6 +307,7 @@ mod tests {
         assert_eq!(stats.added_entries, 0);
         assert_eq!(report[0]["status"], "exact");
         assert_eq!(report[0]["senses"][0]["status"], "same_definition");
+        assert_eq!(report[0]["requires_review"], false);
     }
 
     #[test]
@@ -285,6 +317,7 @@ mod tests {
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.changed_definitions, 1);
         assert_eq!(report[0]["senses"][0]["status"], "changed_definition");
+        assert_eq!(report[0]["requires_review"], true);
     }
 
     #[test]
@@ -295,6 +328,7 @@ mod tests {
         assert_eq!(stats.candidate_review, 1);
         assert_eq!(report[0]["status"], "candidate_review");
         assert_eq!(report[0]["new_entry_id"], "new");
+        assert_eq!(report[0]["requires_review"], true);
         assert_eq!(report[0]["senses"][0]["status"], "same_definition");
     }
 
@@ -332,6 +366,35 @@ mod tests {
         assert_eq!(stats.id_conflicts, 1);
         assert_eq!(report[0]["status"], "id_conflict");
         assert_eq!(report[0]["new_entry_id"], Value::Null);
+    }
+
+    #[test]
+    fn changed_sense_tags_require_review_even_with_the_same_english_gloss() {
+        let old = entry("id", "chamba", "noun", &[("s1", "job")]);
+        let mut revised: Value = serde_json::from_str(&old).unwrap();
+        revised["senses"][0]["tags"] = json!(["Mexico"]);
+        let (stats, report) = compare(&old, &revised.to_string());
+        assert_eq!(stats.exact, 1);
+        assert_eq!(stats.changed_definitions, 0);
+        assert_eq!(stats.changed_annotations, 1);
+        assert_eq!(report[0]["requires_review"], true);
+        assert_eq!(report[0]["senses"][0]["status"], "changed_annotation");
+    }
+
+    #[test]
+    fn adding_a_new_sense_and_changing_forms_require_review() {
+        let old = entry("id", "banco", "noun", &[("financial", "bank")]);
+        let mut revised: Value = serde_json::from_str(&old).unwrap();
+        revised["senses"].as_array_mut().unwrap().push(json!({
+            "id":"seat","definition_en":"bench"
+        }));
+        revised["forms"] = json!([{"form":"bancos"}]);
+        let (stats, report) = compare(&old, &revised.to_string());
+        assert_eq!(stats.added_senses, 1);
+        assert_eq!(stats.changed_forms, 1);
+        assert_eq!(report[0]["requires_review"], true);
+        assert_eq!(report[0]["added_sense_ids"][0], "seat");
+        assert_eq!(report[0]["forms_changed"], true);
     }
 
     #[test]
