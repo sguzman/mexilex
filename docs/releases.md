@@ -25,3 +25,7 @@ The workflow performs a preview-only smoke test when its YAML changes on `main`.
 ## Independently licensed Mexican frequency sidecar
 
 The study archive additionally contains `mexico-dialogue-frequency.jsonl`, `mexico-dialogue-frequency-manifest.json`, and `ACTIV-ES-LICENSE`. Those records are based on **ACTIV-ES v0.2** Mexican/Spanish/Argentine film-subtitle frequency counts and are independently licensed under GPL-2.0. They are **not** Mexico-specific definitions. Keep this data, provenance and license separate from the Wiktionary entry records when importing to an external trainer.
+
+## Independently verified release consumption
+
+A GitHub Actions [consumer check](../.github/workflows/verify-release.yml) downloaded all three public `lex-v0.1.0` assets **from GitHub Releases**, independently verified the SHA-256 file, extracted both archives, checked SQLite integrity and lexical/sense counts, and validated the 124,444-entry study export and 12,528-record independent Mexican dialogue-frequency sidecar. Its successful run is [recorded in Actions](https://github.com/sguzman/mexilex/actions/runs/41247735698). This is more than a build-time artifact integrity check: it demonstrates that consumers can download and inspect the actual public release.

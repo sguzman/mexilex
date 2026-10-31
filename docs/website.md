@@ -60,3 +60,7 @@ The **Common in Mexican film dialogue** button loads a small `dialogue.json` lis
 ## Narrow-phone layout regression (320 CSS pixels)
 
 The live Chromium browser QA also emulates a 320-pixel phone and fails if the actual layout viewport grows wider than the requested device width. The narrow header conserves space by hiding the top navigation's duplicate GitHub Source link; the project remains linked in the footer. This is a layout automation check, not a claim to have tested a physical phone.
+
+## Live browser QA (2026-10-31)
+
+The [no-npm Chromium CDP test](../scripts/site-browser-smoke.mjs) runs from GitHub Actions and exercises the **public deployed website**, rather than mocked local pages. It successfully searched `banqueta`, fetched its live English detail, switched Dark/System theme, loaded 60 Mexican film-dialogue and 60 Mexico-tagged discovery candidates, and checked mobile widths of 390 and 320 CSS pixels. A regression exposed a 336px expanded layout on a nominal 320px screen; narrow-header CSS corrected that to 320px. The [post-deployment live check](https://github.com/sguzman/mexilex/actions/runs/41248347398) passed after the fix. This is emulated-device QA, **not** a claim that a physical phone was tested.

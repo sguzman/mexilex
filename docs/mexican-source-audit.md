@@ -38,3 +38,7 @@ This intentionally prevents recreating Linguarium as an unlimited cross-language
 ## First verified frequency snapshot (2026-10-31)
 
 The [ACTIV-ES v0.2 Git-tracked evidence](../evidence/README.md) was generated from 80,787 source word-frequency rows, with 21,280 exact case-insensitive surface-word matches to our canonical non-inflection-only headwords; 12,528 had positive observed rates in the Mexican film-dialogue subset. The transformation excluded zero-Mexico observations and form-only records; a missing observation **does not** imply a word is never used in Mexico. A pinned source commit, SHA-256, independent GPL-2.0 license and field-level provenance are included. The website adds an opt-in rank-by-film-dialogue-frequency switch and displays Mexico/Spain/Argentina comparison rates for attested words. No Wiktionary definition or `mexican_usage` flag was altered.
+
+## Explicitly excluded restricted dataset
+
+Mark Davies's [Corpus del Español, Mexico database at Gonzaga University](https://repository.gonzaga.edu/corp_span/57/) publicly describes downloadable Mexican text/corpus tables, but its published restrictions prohibit distribution outside Gonzaga and using the data to create commercial or consumer software. **Do not import, normalize, or rehost that database in Mexilex.** Searchable or technically downloadable is not equivalent to having redistribution rights.

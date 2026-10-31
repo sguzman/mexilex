@@ -8,18 +8,18 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | --- | ---: | ---: | --- |
 | ✅ Import and normalize a real lexicon | 30% | 100% | English Wiktionary Spanish JSONL → Rust → SQLite; full import of 813,928 entries and 879,019 senses; per-meaning regional labels |
 | ✅ Version the processed vocabulary in Git | 15% | 100% | 4,096 normalized JSONL shards committed on `main`; full snapshot reconstructs SQLite without redownloading upstream |
-| 🟡 Read-only dictionary presentation | 15% | 95% | Deployed System/light/dark site, flag branding, Mexico-specific browse, frequency-ranked film-dialogue browse, split inflections, live HTTPS record and 500-word index verification; **user mobile-device QA remains** |
+| 🟡 Read-only dictionary presentation | 15% | 99% | Real Chromium browser tested live search/detail fetch, dark/System themes, both discovery buttons, no overflow at 390px, and corrected 320px narrow layout; **physical phone QA remains** |
 | 🟡 Portable trainer exports | 15% | 99% | 124,444 headword-style entries, independent GPL frequency evidence, checksummed public release lex-v0.1.0, and 124,444-entry simulated revision comparison; **validate two real upstream versions before enabling trainer auto-migration** |
 | 🟡 Mexican usage evidence enrichment | 15% | 45% | 2,115 source-verified Mexico-specific senses remain; 12,528 attested words from independently licensed Mexican film dialogue are now versioned in Git, with evidence/provenance separate from semantic tags; **additional representative Mexican sources and corpus bias/coverage remain open** |
-| 🟡 Public website deployment | 10% | 98% | Public GitHub Pages working in user's Firefox; successful deployment and external HTTPS smoke check for original dictionary record, Mexico frequency, and new 500-word browse index; **phone QA remains** |
+| 🟡 Public website deployment | 10% | 99% | Public GitHub Pages verified in user's Firefox; HTTPS, index and source shard checks, plus live Chromium desktop/mobile browser regression tests now run automatically after deployment; **physical phone QA remains** |
 
-**Weighted progress: approximately 91% (+2 percentage points from the previous 89% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 91% (+0.7 percentage points this round, before rounding).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
-1. **Website QA:** public Pages deployment and external live data checks have passed, and the user has verified the site in Firefox; finish real phone QA and edge-case interactions.
+1. **Website QA:** real Chromium checks pass for desktop, 390px mobile, and 320px narrow layouts; full HTTPS lookups, discovery buttons, and light/dark controls are tested automatically on every deployment. A physical phone QA pass remains outstanding.
 2. **Regional evidence:** the first licensed ACTIV-ES Mexican film-dialogue frequency sidecar is imported; pursue broader, representative Mexican written/spoken sources and clearly distinguish frequency from region-specific meanings.
 3. **Trainer contract stability:** `compare-study` flags changed definitions, annotations, forms, and sense sets for review and passed a full 124,444-entry simulated upgrade; test two genuinely different upstream snapshots before importing review histories.
-4. **Permanent distribution:** first public [lex-v0.1.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) published with two archives and SHA-256 checksums; validate consumer downloads when integrating the separate trainer.
+4. **Permanent distribution:** first public [lex-v0.1.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) published and independently downloaded by CI; archive checksums, SQLite integrity, 813,928 dictionary entries, 124,444 study records and separate frequency data all passed consumer verification.
 
 Do not add additional languages, user accounts, SRS algorithms, or unrelated ontology to Mexilex.
