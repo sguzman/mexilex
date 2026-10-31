@@ -1,6 +1,10 @@
 name: Package versioned lexical release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/release.yml"
   workflow_dispatch:
     inputs:
       version:
@@ -25,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      VERSION: ${{ inputs.version }}
+      VERSION: ${{ inputs.version || '0.1.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +75,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Publish permanent release assets
-        if: ${{ inputs.publish }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
         run: |
           cat > data/release-notes.md <<EOF
           Source: English Wiktionary Spanish via Kaikki/Wiktextract.
