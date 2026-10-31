@@ -1,0 +1,72 @@
+name: Verify published lexical release as a downstream consumer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all three files from the actual public lex-v0.1.0 release
+        run: |
+          mkdir -p data/release-download
+          gh release download lex-v0.1.0 --repo sguzman/mexilex --dir data/release-download
+          test -s data/release-download/mexilex-sqlite-v0.1.0.tar.gz
+          test -s data/release-download/mexilex-study-v0.1.0.tar.gz
+          test -s data/release-download/SHA256SUMS
+      - name: Verify public archive checksums and extract content
+        run: |
+          (cd data/release-download && sha256sum --check SHA256SUMS)
+          mkdir -p data/consumer/sqlite data/consumer/study
+          tar -xzf data/release-download/mexilex-sqlite-v0.1.0.tar.gz -C data/consumer/sqlite
+          tar -xzf data/release-download/mexilex-study-v0.1.0.tar.gz -C data/consumer/study
+          test -s data/consumer/sqlite/mexilex.sqlite
+          test -s data/consumer/study/study.jsonl
+          test -s data/consumer/study/mexico-labeled.jsonl
+          test -s data/consumer/study/mexico-dialogue-frequency.jsonl
+          test -s data/consumer/study/ACTIV-ES-LICENSE
+          test -s data/consumer/study/CORPUS-LICENSE.md
+          test -s data/consumer/sqlite/CORPUS-LICENSE.md
+      - name: Verify published database and stateless trainer export contract
+        run: |
+          if ! command -v sqlite3 >/dev/null 2>&1; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq sqlite3
+          fi
+          sqlite3 data/consumer/sqlite/mexilex.sqlite 'PRAGMA integrity_check;' | grep -qx ok
+          test "$(sqlite3 data/consumer/sqlite/mexilex.sqlite 'SELECT COUNT(*) FROM entries;')" -eq 813928
+          test "$(sqlite3 data/consumer/sqlite/mexilex.sqlite 'SELECT COUNT(*) FROM senses;')" -eq 879019
+          test "$(sqlite3 data/consumer/sqlite/mexilex.sqlite "SELECT COUNT(*) FROM entries WHERE word='banqueta';")" -gt 0
+          test "$(sqlite3 data/consumer/sqlite/mexilex.sqlite "SELECT COUNT(*) FROM senses WHERE mexican_usage=1 AND definition_en LIKE '%sidewalk%';")" -gt 0
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const root = 'data/consumer/study/';
+          const manifest = JSON.parse(fs.readFileSync(root + 'release-manifest.json', 'utf8'));
+          assert.equal(manifest.version, '0.1.0');
+          assert.equal(manifest.source_git_commit, 'fc0457829c9e6f5aed331b0390867994a60b6bb3');
+          assert.equal(manifest.lexical_language, 'es-MX');
+          assert.equal(manifest.definition_language, 'en');
+          const read = name => fs.readFileSync(root + name, 'utf8').trimEnd().split('\n').map(JSON.parse);
+          const study = read('study.jsonl');
+          const labeled = read('mexico-labeled.jsonl');
+          const dialogue = read('mexico-dialogue-frequency.jsonl');
+          assert.equal(study.length, 124444);
+          assert.ok(labeled.length > 1000);
+          assert.equal(dialogue.length, 12528);
+          assert.ok(study.every(x => x.source === 'mexilex' && x.lexical_language === 'es-MX' && x.definition_language === 'en'));
+          assert.ok(study.every(x => !('review_history' in x) && !('user_id' in x)));
+          assert.ok(labeled.every(x => x.mexico_labeled === true));
+          assert.ok(dialogue.every(x => Array.isArray(x) && x.length === 5 && x[1] > 0));
+          console.log('Verified release v0.1.0: 813,928 entries, 879,019 meanings, 124,444 study entries, 12,528 dialogue observations');
+          NODE
