@@ -69,3 +69,9 @@ jobs:
           assert.ok(record.senses.some(s => s.mexican_usage === true && /sidewalk/i.test(s.definition_en)));
           console.log(`Live HTTPS verified: ${config.entries} records, banqueta -> ${banqueta[3]}, pinned commit ${config.commit}`);
           NODE
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Exercise live desktop and mobile UI via Chromium, without mocks
+        run: node scripts/site-browser-smoke.mjs
