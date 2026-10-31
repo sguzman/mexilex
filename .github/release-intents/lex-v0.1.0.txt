@@ -14,3 +14,7 @@ Includes:
 Build and validation are performed by .github/workflows/release.yml. If any
 test, source check, archive check or upload fails, do not claim publication.
 No SRS reviews, personal progress, or learner data belong in these archives.
+
+The first publication attempt was skipped because the workflow's push-condition
+matched an unavailable event-added-files field. This change explicitly reruns
+publication using the corrected exact-commit-message guard.
