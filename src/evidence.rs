@@ -30,7 +30,9 @@ fn exact_lower(word: &str) -> String {
 }
 
 fn field<'a>(record: &'a StringRecord, index: usize, label: &str) -> Result<&'a str> {
-    record.get(index).ok_or_else(|| format!("missing {label}").into())
+    record
+        .get(index)
+        .ok_or_else(|| format!("missing {label}").into())
 }
 fn rate(record: &StringRecord, index: usize, label: &str) -> Result<f64> {
     let n: f64 = field(record, index, label)?.parse()?;
@@ -45,10 +47,14 @@ fn known_headwords(corpus: &Path) -> Result<HashSet<String>> {
     for path in corpus_load::shards(corpus)? {
         for line in BufReader::new(File::open(path)?).lines() {
             let record: Value = serde_json::from_str(&line?)?;
-            let senses = record.get("senses").and_then(Value::as_array)
+            let senses = record
+                .get("senses")
+                .and_then(Value::as_array)
                 .ok_or("corpus record missing senses")?;
             if !lexical::is_form(senses) {
-                let word = record.get("word").and_then(Value::as_str)
+                let word = record
+                    .get("word")
+                    .and_then(Value::as_str)
                     .ok_or("corpus record missing word")?;
                 words.insert(exact_lower(word));
             }
@@ -62,10 +68,14 @@ pub(crate) fn parse_evidence<R: Read, W: Write>(
     mut output: W,
     headwords: &HashSet<String>,
 ) -> Result<EvidenceStats> {
-    let mut reader = csv::ReaderBuilder::new().flexible(false).from_reader(source);
+    let mut reader = csv::ReaderBuilder::new()
+        .flexible(false)
+        .from_reader(source);
     let headers = reader.headers()?.clone();
     let index = |label: &str| -> Result<usize> {
-        headers.iter().position(|header| header == label)
+        headers
+            .iter()
+            .position(|header| header == label)
             .ok_or_else(|| format!("missing ACTIV-ES column {label}").into())
     };
     let word_col = index("word")?;
@@ -97,7 +107,9 @@ pub(crate) fn parse_evidence<R: Read, W: Write>(
         }
     }
     for (word, [mx, es, ar, dispersion]) in rows {
-        if mx == 0.0 { continue; }
+        if mx == 0.0 {
+            continue;
+        }
         serde_json::to_writer(&mut output, &json!([word, mx, es, ar, dispersion]))?;
         output.write_all(b"\n")?;
         stats.attested_mexico += 1;
@@ -106,10 +118,18 @@ pub(crate) fn parse_evidence<R: Read, W: Write>(
     Ok(stats)
 }
 
-pub(crate) fn import_evidence(source: &Path, corpus: &Path, destination: &Path) -> Result<EvidenceStats> {
-    if destination.exists() { return Err("refusing to overwrite frequency evidence".into()); }
+pub(crate) fn import_evidence(
+    source: &Path,
+    corpus: &Path,
+    destination: &Path,
+) -> Result<EvidenceStats> {
+    if destination.exists() {
+        return Err("refusing to overwrite frequency evidence".into());
+    }
     let words = known_headwords(corpus)?;
-    if words.is_empty() { return Err("empty tracked lexical corpus".into()); }
+    if words.is_empty() {
+        return Err("empty tracked lexical corpus".into());
+    }
     if let Some(parent) = destination.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -119,10 +139,17 @@ pub(crate) fn import_evidence(source: &Path, corpus: &Path, destination: &Path) 
         let mut block = [0u8; 65536];
         loop {
             let n = input.read(&mut block)?;
-            if n == 0 { break; }
+            if n == 0 {
+                break;
+            }
             checksum.update(&block[..n]);
         }
-        let writer = BufWriter::new(OpenOptions::new().create_new(true).write(true).open(destination)?);
+        let writer = BufWriter::new(
+            OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(destination)?,
+        );
         let stats = parse_evidence(BufReader::new(File::open(source)?), writer, &words)?;
         let manifest = json!({
             "format_version": 1,
@@ -140,7 +167,10 @@ pub(crate) fn import_evidence(source: &Path, corpus: &Path, destination: &Path) 
             "matched_words": stats.matched_words,
             "attested_mexico": stats.attested_mexico
         });
-        fs::write(destination.with_extension("manifest.json"), format!("{}\n", serde_json::to_string_pretty(&manifest)?))?;
+        fs::write(
+            destination.with_extension("manifest.json"),
+            format!("{}\n", serde_json::to_string_pretty(&manifest)?),
+        )?;
         Ok(stats)
     })();
     if result.is_err() {
@@ -163,15 +193,20 @@ mod tests {
             \"3\",\"caminé\",5,5,5,5,2,2,2,2\n\
             \"4\",\"chamba\",0.2,0,2,1,1,0,3,1\n\
             \"5\",\"raro\",0,0,0,0,0,0,0,0\n";
-        let words = ["banqueta", "casa", "chamba", "raro"].iter()
-            .map(|w| w.to_string()).collect();
+        let words = ["banqueta", "casa", "chamba", "raro"]
+            .iter()
+            .map(|w| w.to_string())
+            .collect();
         let mut buffer = Vec::new();
         let counts = parse_evidence(Cursor::new(csv), &mut buffer, &words).unwrap();
         assert_eq!(counts.source_rows, 5);
         assert_eq!(counts.matched_words, 4);
         assert_eq!(counts.attested_mexico, 3);
-        let rows: Vec<Value> = String::from_utf8(buffer).unwrap().lines()
-            .map(|l| serde_json::from_str(l).unwrap()).collect();
+        let rows: Vec<Value> = String::from_utf8(buffer)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
         let sidewalk = rows.iter().find(|r| r[0] == "banqueta").unwrap();
         assert_eq!(sidewalk[1], 7.0);
         assert_eq!(sidewalk[2], 1.0);
@@ -186,7 +221,17 @@ mod tests {
         let mut output = Vec::new();
         assert!(parse_evidence(Cursor::new("word,mx_orf\ncasa,2\n"), &mut output, &words).is_err());
         let header = "word,ar_orf,es_orf,mx_orf,mx_ord\n";
-        assert!(parse_evidence(Cursor::new(format!("{header}casa,1,2,NaN,3\n")), &mut output, &words).is_err());
-        assert!(parse_evidence(Cursor::new(format!("{header}casa,1,2,3,11\n")), &mut output, &words).is_err());
+        assert!(parse_evidence(
+            Cursor::new(format!("{header}casa,1,2,NaN,3\n")),
+            &mut output,
+            &words
+        )
+        .is_err());
+        assert!(parse_evidence(
+            Cursor::new(format!("{header}casa,1,2,3,11\n")),
+            &mut output,
+            &words
+        )
+        .is_err());
     }
 }
