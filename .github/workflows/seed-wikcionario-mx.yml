@@ -30,6 +30,7 @@ jobs:
             --output data/eswiktionary-mexico-source.jsonl \
             'https://kaikki.org/eswiktionary/Espa%C3%B1ol/tags/p9/Mexico/kaikki.org-dictionary-Espa%C3%B1ol-tag-Mexico.jsonl'
           test "$(stat -c%s data/eswiktionary-mexico-source.jsonl)" -gt 1000000
+          test "$(wc -l < data/eswiktionary-mexico-source.jsonl)" -gt 1500
           sha256sum data/eswiktionary-mexico-source.jsonl
       - name: Normalize independent Mexico-tagged word evidence with Rust
         run: |
