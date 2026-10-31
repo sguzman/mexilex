@@ -209,6 +209,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         ("index.html", include_str!("../site/index.html")),
         ("style.css", include_str!("../site/style.css")),
         ("app.js", include_str!("../site/app.js")),
+        ("search.mjs", include_str!("../site/search.mjs")),
         ("favicon.svg", include_str!("../site/favicon.svg")),
     ] {
         fs::write(destination.join(name), content)?;

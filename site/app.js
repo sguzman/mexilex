@@ -1,3 +1,4 @@
+import { fold, bucketOf, resultMatches } from "./search.mjs";
 "use strict";
 const REPOSITORY = "sguzman/mexilex";
 const root = document.documentElement;
@@ -14,7 +15,7 @@ let selectedId = null;
 let sequence = 0;
 let activeSearch = [];
 
-const fold = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+
 function el(tag, className, text) {
   const n = document.createElement(tag);
   if (className) n.className = className;
@@ -41,11 +42,6 @@ function updateLocation(q) {
   history.replaceState(null, "", url);
 }
 function showStatus(message) { byId("result-count").textContent = message; }
-function bucketOf(q) {
-  const chars = Array.from(fold(q));
-  if (chars.length < 2) return null;
-  return chars.slice(0, 2).map(c => /^[a-z0-9]$/.test(c) ? c : "_").join("");
-}
 async function getIndex(bucket, forms = false) {
   const path = (forms ? "forms/" : "index/") + bucket + ".json";
   if (cache.has(path)) return cache.get(path);
@@ -58,9 +54,7 @@ async function getIndex(bucket, forms = false) {
   cache.set(path, promise);
   try { return await promise; } catch (err) { cache.delete(path); throw err; }
 }
-function resultMatches(record, q) {
-  return fold(record[0]).startsWith(q) && (!mexicoOnly.checked || record[4]) && (includeForms.checked || !record[5]);
-}
+
 function renderResults(matches, total, sample = false) {
   const fragment = document.createDocumentFragment();
   matches.forEach(row => {
@@ -102,7 +96,7 @@ async function runSearch() {
     const matches = [];
     let total = 0;
     for (const row of index) {
-      if (!resultMatches(row, q)) continue;
+      if (!resultMatches(row, q, mexicoOnly.checked, includeForms.checked)) continue;
       total++;
       if (matches.length < 80) matches.push(row);
     }
