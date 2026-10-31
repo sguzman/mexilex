@@ -1,0 +1,30 @@
+Mexilex lexical-data snapshot lex-v0.3.0
+
+Publication intent: create an immutable GitHub Release from this exact main
+commit after all packaging and consumer tests. Preserve existing public
+lex-v0.1.0 and lex-v0.2.0 assets without modification.
+
+New compared with lex-v0.2.0:
+- CC BY-SA 4.0 CIEMPIESS LIGHT Central-Mexican radio-conversation aggregate
+  surface word counts, in a separate JSONL sidecar with manifest and attribution.
+- Source pinned to revision e9e6dc556ba8479f54160701a7542a67de1fbe14
+  and SHA-256 c3887d0e4b6adefa4ef5aa80dc76f858c89ad1a131e7f2b3f49b7316cbdad1f4.
+- 16,663 transcribed segments, 167,118 word occurrences, 6,250 public
+  surface spellings occurring at least twice. No raw conversations,
+  recording files, audio IDs, or speaker details included.
+
+Preserved:
+- Reconstructed full SQLite dictionary with English Wiktionary lexical senses.
+- Stateless es-MX study export defined in English, with no review histories.
+- Separate GPL-2.0 ACTIV-ES Mexican film dialogue frequency sidecar.
+- Separate CC BY-SA/GFDL Wikcionario Mexican regional spelling evidence.
+- Source SHA-256 checksums, provenance, version, and license notices.
+
+Corpus observations are not Mexico-exclusive semantic labels. No private learner
+state may be included in the release.
+
+Single-use publication trigger:
+- This exact new release-intent file must be added in the main-branch commit.
+- Commit message must be exactly: release: publish lex-v0.3.0
+- GitHub publication and postpublication download verification must both pass
+  before describing the release as verified.
