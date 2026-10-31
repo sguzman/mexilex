@@ -113,3 +113,7 @@ The [upstream review workflow](.github/workflows/review-upstream.yml) checks the
 ## Independent Mexican regional evidence from Wikcionario
 
 A second licensed regional evidence layer is tracked in [Spanish Wiktionary Mexico records](evidence/WIKCIONARIO-SOURCE.md), with a [versioned manifest](evidence/eswiktionary-mexico.manifest.json). The import observed **2,304 explicitly Mexico-tagged Spanish Wiktionary senses across 1,912 normalized spellings**; **1,235 spellings** also occur as eligible English-defined Mexilex headwords. The others remain visible in the source dataset but are not given invented English definitions. The site uses a separate **WIKCIONARIO MX** word-evidence indicator; it never changes the sense-level Mexico label inherited from English Wiktionary. Content is CC BY-SA/GFDL, independent of the MIT code license and GPL-licensed ACTIV-ES rates.
+
+## Mexican radio conversation observations
+
+The independently licensed [CIEMPIESS LIGHT Mexican-radio evidence](evidence/CIEMPIESS-SOURCE.md) records **167,118 word-token occurrences across 16,663 broadcast-interview segments**, yielding 6,250 distinct public surface-spelling records after excluding singletons. Its CC BY-SA 4.0 data, manifest, and upstream SHA-256 are separate from GPL film-dialogue frequencies and CC BY-SA/GFDL Wiktionary senses. The website shows source-attributed observations alongside an entry when that spelling occurs in the recorded conversations; it does not infer Mexico-specific meanings or alter the static dictionary search index.

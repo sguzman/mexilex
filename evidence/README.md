@@ -14,3 +14,7 @@ Source: [francojc/activ-es](https://github.com/francojc/activ-es), ACTIV-ES v0.2
 The generated file `activ-es-v02.jsonl` has one JSON array per line: `[word, mexico_per_100k, spain_per_100k, argentina_per_100k, mexico_dispersion_per_10_documents]`. The adjacent `activ-es-v02.manifest.json` records the source SHA-256 and record counts. Do not use these values as dictionary sense labels, broad statements about all speakers, or a general frequency ranking of written Mexican Spanish.
 
 `cargo run --release -- import-mx-frequency data/aes1grams.csv corpus evidence/activ-es-v02.jsonl` creates the sidecar. The [seed workflow](../.github/workflows/seed-mx-frequency.yml) downloads the exact pinned upstream CSV, verifies data and commits the normalized sidecar to `main`. Frequency data must remain explicitly separate in websites and exports.
+
+## Additional independent sources
+
+The [Spanish Wiktionary Mexico-tagged evidence](WIKCIONARIO-SOURCE.md) corroborates spellings with an explicitly Mexico-tagged sense in **Spanish** Wiktionary; these are not matched to English meanings. The separate [CIEMPIESS LIGHT radio evidence](CIEMPIESS-SOURCE.md) is a **CC BY-SA 4.0** aggregate of Central-Mexican radio conversations, not film dialogue and not a representative national frequency survey. Its `ciempiess-light-frequency.jsonl` has records `[word, occurrences, utterances]` and a pinned-source/hashed-output manifest. These sources have different licenses, sampling methods and denominators and must never be combined into a false unqualified Mexican-regional sense label.

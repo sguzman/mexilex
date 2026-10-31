@@ -72,3 +72,11 @@ An independently licensed **WIKCIONARIO MX** badge is generated for headword spe
 ### Live external regression evidence (2026-10-31)
 
 The site now displays **WIKCIONARIO MX** for source-verified word spellings such as `banqueta` while retaining the independently sourced English `sidewalk` meaning. The [public Pages deployment](https://github.com/sguzman/mexilex/actions/runs/41250676458) succeeded; the [real HTTP and Chromium check](https://github.com/sguzman/mexilex/actions/runs/41250901603) verified the `banqueta` search-row evidence, source link, normal meanings, desktop and narrow-phone layout. The [standalone no-mocks browser QA](https://github.com/sguzman/mexilex/actions/runs/41250901523) also passed.
+
+## Independently licensed CIEMPIESS Mexican radio evidence (2026-10-31)
+
+The site now serves a **separate, lazy-loaded** `radio.json` frequency map built from the 6,250 published orthographic spellings in [CIEMPIESS LIGHT](../evidence/CIEMPIESS-SOURCE.md). For each attested word the detail panel shows its raw count and how many of the 16,663 Mexican radio interview segments contain the token. For example, *casa* appears 43 times across 42 segments. This is a record of one corpus, **not** a general Mexican usage probability, lemma frequency or proof of a Mexico-exclusive sense.
+
+The Rust builder validates the source revision, JSONL count and SHA-256 before exporting the separate map, and emits the CC BY-SA 4.0 attribution at `mexico-radio-source.txt`. The existing dictionary search rows, the ACTV-ES film-dialogue rates, the independent Wikcionario evidence, and English Wiktionary's sense-level Mexico tags remain unchanged. The radio panel loads only after selecting a word and fails without interrupting the rest of the entry.
+
+The website pipeline checks the generated map and source license; post-deployment live Chromium QA verifies the `casa` radio panel, nonexclusive wording, link, and preserved `banqueta` meanings on the actual public HTTPS site. This is browser/device emulation, **not** a physical phone inspection.
