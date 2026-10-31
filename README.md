@@ -104,3 +104,7 @@ A separate [GPL-2.0 ACTIV-ES v0.2 sidecar](evidence/README.md), derived from Mex
 ## Release and browser verification
 
 The [published release consumer check](.github/workflows/verify-release.yml) independently downloads `lex-v0.1.0` and checks the archive digests, SQLite integrity, licensed sidecars, language contract, and stateless study records. The [live website verification](.github/workflows/verify-live-site.yml) now exercises a genuine Chromium browser at desktop, 390px mobile and 320px narrow-phone widths, including search/detail fetch, discovery buttons and the System/Dark selector, without npm or mocked network responses.
+
+## Updating the Wiktionary corpus safely
+
+The [upstream review workflow](.github/workflows/review-upstream.yml) checks the actual new source SHA-256 and prepares a non-destructive old-versus-new reconciliation if the extraction changes. The [refresh workflow](.github/workflows/seed-corpus.yml) is manual-only and refuses to overwrite the Git-tracked lexicon without the reviewed source checksum and an explicit accepted change budget. See [upstream update policy and evidence](docs/upstream-review.md). The first review verified that the currently published Kaikki Spanish source was unchanged.

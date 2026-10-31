@@ -13,13 +13,13 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | 🟡 Mexican usage evidence enrichment | 15% | 45% | 2,115 source-verified Mexico-specific senses remain; 12,528 attested words from independently licensed Mexican film dialogue are now versioned in Git, with evidence/provenance separate from semantic tags; **additional representative Mexican sources and corpus bias/coverage remain open** |
 | 🟡 Public website deployment | 10% | 99% | Public GitHub Pages verified in user's Firefox; HTTPS, index and source shard checks, plus live Chromium desktop/mobile browser regression tests now run automatically after deployment; **physical phone QA remains** |
 
-**Weighted progress: approximately 91% (+0.7 percentage points this round, before rounding).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 91% (no change to the rounded first-release estimate this round; source-refresh safeguards improved).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
 1. **Website QA:** real Chromium checks pass for desktop, 390px mobile, and 320px narrow layouts; full HTTPS lookups, discovery buttons, and light/dark controls are tested automatically on every deployment. A physical phone QA pass remains outstanding.
 2. **Regional evidence:** the first licensed ACTIV-ES Mexican film-dialogue frequency sidecar is imported; pursue broader, representative Mexican written/spoken sources and clearly distinguish frequency from region-specific meanings.
-3. **Trainer contract stability:** `compare-study` flags changed definitions, annotations, forms, and sense sets for review and passed a full 124,444-entry simulated upgrade; test two genuinely different upstream snapshots before importing review histories.
+3. **Trainer contract stability:** `compare-study` handles changed definitions/annotations/forms/senses, and a read-only real upstream review plus checksum-and-budget-gated refresh are implemented. The first live review found identical upstream bytes, so a genuine new-version migration remains untested; never auto-migrate private review histories.
 4. **Permanent distribution:** first public [lex-v0.1.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) published and independently downloaded by CI; archive checksums, SQLite integrity, 813,928 dictionary entries, 124,444 study records and separate frequency data all passed consumer verification.
 
 Do not add additional languages, user accounts, SRS algorithms, or unrelated ontology to Mexilex.
