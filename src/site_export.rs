@@ -30,6 +30,7 @@ struct SearchRecord {
     mexico: bool,
     form: bool,
     normalized: String,
+    frequency: Option<[f64; 4]>,
 }
 
 fn normalize(value: &str) -> String {
@@ -87,7 +88,8 @@ fn write_indexes(groups: BTreeMap<String, Vec<SearchRecord>>, directory: &Path) 
                     record.pos,
                     record.gloss,
                     record.mexico,
-                    record.form
+                    record.form,
+                    record.frequency
                 ]),
             )?;
         }
@@ -96,6 +98,39 @@ fn write_indexes(groups: BTreeMap<String, Vec<SearchRecord>>, directory: &Path) 
         count += 1;
     }
     Ok(count)
+}
+
+fn load_mexican_frequency(corpus: &Path) -> Result<BTreeMap<String, [f64; 4]>> {
+    let base = corpus.parent().unwrap_or_else(|| Path::new("."));
+    let path = base.join("evidence/activ-es-v02.jsonl");
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let manifest: Value = serde_json::from_reader(File::open(base.join("evidence/activ-es-v02.manifest.json"))?)?;
+    if manifest.get("format_version").and_then(Value::as_u64) != Some(1)
+        || manifest.get("source_commit").and_then(Value::as_str) != Some(crate::evidence::SOURCE_COMMIT) {
+        return Err("unsupported Mexican frequency evidence provenance".into());
+    }
+    let mut by_word = BTreeMap::new();
+    for line in BufReader::new(File::open(path)?).lines() {
+        let row: Value = serde_json::from_str(&line?)?;
+        let cells = row.as_array().ok_or("expected one Mexican evidence array per line")?;
+        if cells.len() != 5 { return Err("expected five Mexican frequency fields".into()); }
+        let word = cells[0].as_str().ok_or("missing frequency headword")?.to_lowercase();
+        let mut rates = [0.0; 4];
+        for (index, rate) in rates.iter_mut().enumerate() {
+            *rate = cells[index + 1].as_f64().ok_or("missing frequency metric")?;
+            if !rate.is_finite() || *rate < 0.0 {
+                return Err("invalid Mexican dialogue frequency metric".into());
+            }
+        }
+        if rates[0] <= 0.0 { return Err("Mexico attestation must be positive".into()); }
+        if by_word.insert(word, rates).is_some() { return Err("duplicate Mexico evidence word".into()); }
+    }
+    if manifest["attested_mexico"].as_u64() != Some(by_word.len() as u64) {
+        return Err("Mexico evidence count differs from provenance manifest".into());
+    }
+    Ok(by_word)
 }
 
 pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Result<SiteStats> {
@@ -121,6 +156,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     }
     let mut groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
     let mut inflection_groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
+    let frequency = load_mexican_frequency(corpus)?;
     let mut stats = SiteStats::default();
     let mut mexican_browse: Vec<Value> = Vec::new();
 
@@ -181,6 +217,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                     mexico: mexican,
                     form,
                     normalized,
+                    frequency: frequency.get(&word.to_lowercase()).copied(),
                 });
             }
         }
@@ -215,6 +252,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         ("search.mjs", include_str!("../site/search.mjs")),
         ("favicon.svg", include_str!("../site/favicon.svg")),
         ("flag-license.txt", include_str!("../site/flag-license.txt")),
+        ("mexico-frequency-license.txt", include_str!("../evidence/ACTIV-ES-LICENSE")),
     ] {
         fs::write(destination.join(name), content)?;
     }
@@ -227,6 +265,8 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         "form_buckets": stats.form_buckets,
         "mexico_labeled_entries": stats.mexico_labeled_entries,
         "inflected_entries": stats.inflected_entries,
+        "mexico_dialogue_headwords": frequency.len(),
+        "frequency_source": if frequency.is_empty() { Value::Null } else { json!("ACTIV-ES v0.2, Mexican film dialogue; GPL-2.0") },
         "dictionary_language": "es-MX",
         "definition_language": "en"
     });

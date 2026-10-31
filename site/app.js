@@ -1,4 +1,4 @@
-import { fold, bucketOf, resultMatches } from "./search.mjs";
+import { fold, bucketOf, resultMatches, rankMexicanFrequency } from "./search.mjs";
 "use strict";
 const REPOSITORY = "sguzman/mexilex";
 const root = document.documentElement;
@@ -8,6 +8,7 @@ const detail = byId("detail");
 const queryInput = byId("query");
 const mexicoOnly = byId("mexico-only");
 const includeForms = byId("include-forms");
+const rankMexico = byId("rank-mx");
 const cache = new Map();
 const fmt = new Intl.NumberFormat("en");
 let config = null;
@@ -91,7 +92,8 @@ async function runSearch() {
     const inflections = includeForms.checked ? await getIndex(bucket, true) : [];
     if (turn !== sequence) return;
     const index = ordinary.concat(inflections);
-    index.sort((a, b) => fold(a[0]).localeCompare(fold(b[0]), "es") || Number(a[5]) - Number(b[5]) || a[2].localeCompare(b[2], "en"));
+    index.sort(rankMexico.checked ? rankMexicanFrequency : (a, b) =>
+      fold(a[0]).localeCompare(fold(b[0]), "es") || Number(a[5]) - Number(b[5]) || a[2].localeCompare(b[2], "en"));
     const q = fold(query);
     const matches = [];
     let total = 0;
@@ -145,6 +147,7 @@ let timer;
 queryInput.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(runSearch, 160); });
 mexicoOnly.addEventListener("change", runSearch);
 includeForms.addEventListener("change", runSearch);
+rankMexico.addEventListener("change", runSearch);
 document.querySelectorAll("[data-sample]").forEach(button => button.addEventListener("click", () => {
   queryInput.value = button.dataset.sample;
   runSearch();
@@ -189,7 +192,7 @@ async function selectEntry(selected) {
     }
     if (selectedId !== id) return;
     if (!record) throw new Error("The selected entry was not found in its source shard");
-    showEntry(record);
+    showEntry(record, selected[6]);
   } catch (_) {
     if (selectedId !== selected[1]) return;
     const note = el("p", "empty", "This entry could not be loaded. The original Wiktionary entry is still available:");
@@ -198,13 +201,23 @@ async function selectEntry(selected) {
     detail.replaceChildren(note, links);
   }
 }
-function showEntry(record) {
+function showEntry(record, dialogueFrequency) {
   const container = el("div", "detail-content");
   const head = el("div", "detail-header");
   const titlebox = el("div");
   titlebox.append(row("h2", record.word), row("div", record.part_of_speech, "pos"));
   head.append(titlebox);
   container.append(head);
+  if (Array.isArray(dialogueFrequency) && dialogueFrequency.length === 4) {
+    const [mx, es, ar, dispersion] = dialogueFrequency;
+    const frequencies = el("section", "frequency-evidence");
+    frequencies.append(el("strong", "", "Attested in Mexican film dialogue"));
+    const comparison = el("p", "", `Occurrences per 100,000 words: Mexico ${mx.toLocaleString("en")} · Spain ${es.toLocaleString("en")} · Argentina ${ar.toLocaleString("en")}. Mexican film dispersion: ${dispersion} / 10.`);
+    frequencies.append(comparison);
+    const note = el("small", "", "ACTIV-ES v0.2 · Film-subtitle word frequency (surface spelling), not a regional-sense label.");
+    frequencies.append(note);
+    container.append(frequencies);
+  }
   const senses = Array.isArray(record.senses) ? record.senses : [];
   senses.forEach((sense, index) => {
     const section = el("section", "sense");

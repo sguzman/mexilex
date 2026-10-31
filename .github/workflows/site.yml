@@ -12,6 +12,7 @@ on:
       - "src/main.rs"
       - "tests/site-search.test.mjs"
       - "corpus/**"
+      - "evidence/**"
       - "Cargo.toml"
       - ".github/workflows/site.yml"
   workflow_dispatch:
@@ -41,6 +42,7 @@ jobs:
           test -s data/site/index.html
           test -s data/site/favicon.svg
           test -s data/site/flag-license.txt
+          test -s data/site/mexico-frequency-license.txt
           grep -q "mexico-hero-flag" data/site/index.html
           grep -q "mexico-tricolor-ribbon" data/site/index.html
           test -s data/site/config.json

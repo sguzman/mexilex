@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fold, bucketOf, resultMatches } from "../site/search.mjs";
+import { fold, bucketOf, resultMatches, rankMexicanFrequency } from "../site/search.mjs";
 
 test("accent-insensitive Spanish lookup with exact source spellings unchanged", () => {
   assert.equal(fold("ÁRBOL"), "arbol");
@@ -25,4 +25,13 @@ test("inflected forms require explicit opt-in", () => {
   assert.equal(resultMatches(inflected,"cami"),false);
   assert.equal(resultMatches(inflected,"CAMI",false,true),true);
   assert.equal(resultMatches(inflected,"cami",true,true),false);
+});
+
+test("Mexican dialogue evidence sorts safely without confusing regional labels", () => {
+  const a = ["casa","a","noun","house",false,false,[61,42,43,10]];
+  const b = ["chamba","b","noun","work",true,false,[5,0,1,4]];
+  const c = ["banqueta","c","noun","sidewalk",true,false,null];
+  assert.deepEqual([c,b,a].sort(rankMexicanFrequency), [a,b,c]);
+  assert.equal(a[4], false);
+  assert.equal(b[4], true);
 });

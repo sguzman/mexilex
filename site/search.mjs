@@ -12,3 +12,9 @@ export function resultMatches(record, query, mexicanOnly = false, includeForms =
     && (!mexicanOnly || Boolean(record[4]))
     && (includeForms || !record[5]);
 }
+
+export function rankMexicanFrequency(a, b) {
+  const mx = row => Array.isArray(row[6]) && Number.isFinite(row[6][0]) ? row[6][0] : -1;
+  return mx(b) - mx(a) || fold(a[0]).localeCompare(fold(b[0]), "es")
+    || Number(a[5]) - Number(b[5]) || a[2].localeCompare(b[2], "en");
+}

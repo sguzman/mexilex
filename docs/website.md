@@ -45,3 +45,10 @@ The generated site artifact was inspected with Chromium at desktop (1365 px) and
 
 The browser favicon, header mark and hero badge use the actual Mexican flag with its national coat of arms, sourced from the MIT-licensed [flag-icons](https://github.com/lipis/flag-icons) project. The website includes the copyright/license text in `flag-license.txt`; the site's footer links to the original artwork. A subtle green-white-red ribbon sits below the navigation. The design follows System/Light/Dark themes and remains responsive on narrow screens.
 
+
+## Independent Mexican spoken-frequency evidence
+
+The optional Git-tracked `evidence/activ-es-v02.jsonl` sidecar contains observed surface-word frequencies from Mexican, Spanish, and Argentine film dialogue (ACTIV-ES v0.2). The full source file is not bundled into the canonical Wiktionary lexicon. When present, the Rust site builder validates the sidecar manifest, attaches comparable per-100,000-word rates to matching headword results, and the website offers **Rank by frequency in Mexican film dialogue**. Selecting an attested word shows the source-specific rates and Mexican film dispersion.
+
+The site **never** turns frequency evidence into a Mexico-specific definition label. Words attested in dialogue can be ordinary general Spanish, and film subtitle data is not representative of all spoken or written Mexico. The sidecar and site copy of [ACTIV-ES's GPL-2.0 license](../evidence/ACTIV-ES-LICENSE) remain separate from Wiktionary content licensing. Import details and limitations are documented in [evidence/README.md](../evidence/README.md).
+
