@@ -1,0 +1,67 @@
+name: Seed Spanish Wiktionary Mexico regional evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/seed-wikcionario-mx.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mexilex-wikcionario-evidence
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Download independently licensed, explicitly Mexico-tagged Español senses
+        run: |
+          mkdir -p data
+          curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
+            --output data/eswiktionary-mexico-source.jsonl \
+            'https://kaikki.org/eswiktionary/Espa%C3%B1ol/tags/p9/Mexico/kaikki.org-dictionary-Espa%C3%B1ol-tag-Mexico.jsonl'
+          test "$(stat -c%s data/eswiktionary-mexico-source.jsonl)" -gt 1000000
+          sha256sum data/eswiktionary-mexico-source.jsonl
+      - name: Normalize independent Mexico-tagged word evidence with Rust
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test --all-targets
+          cargo run --release -- import-mx-wikcionario \
+            data/eswiktionary-mexico-source.jsonl corpus data/wikcionario-derived.jsonl
+          test -s data/wikcionario-derived.jsonl
+          test -s data/wikcionario-derived.manifest.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const m=JSON.parse(fs.readFileSync('data/wikcionario-derived.manifest.json','utf8'));
+          if (m.source_records < 1800 || m.source_records > 2500 || m.source_senses < 2000
+              || m.matched_spellings < 500 || m.matched_spellings > m.distinct_spellings) {
+            throw Error('Unexpected Mexican Wikcionario source coverage; inspect before publishing');
+          }
+          if (!/^[a-f0-9]{64}$/.test(m.source_sha256)) throw Error('Missing source checksum');
+          console.log('Mexican Wikcionario evidence audit:',JSON.stringify(m));
+          NODE
+      - name: Commit only normalized spelling-level evidence with attribution
+        run: |
+          cp data/wikcionario-derived.jsonl evidence/eswiktionary-mexico.jsonl
+          cp data/wikcionario-derived.manifest.json evidence/eswiktionary-mexico.manifest.json
+          test -s evidence/WIKCIONARIO-SOURCE.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- evidence/eswiktionary-mexico.jsonl evidence/eswiktionary-mexico.manifest.json
+          if git diff --cached --quiet; then
+            echo "Spanish Wiktionary Mexican evidence unchanged"
+          else
+            git commit -m "data: track independently tagged Mexico words from Spanish Wiktionary"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
