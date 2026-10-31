@@ -127,7 +127,7 @@ pub(crate) fn load_corpus(db: &mut Connection, directory: &Path) -> Result<Loade
                 {
                     return Err(format!("{}: language mismatch", path.display()).into());
                 }
-                let key_prefix = &key.get(..3).ok_or("invalid entry key")?;
+                let key_prefix = key.get(..3).ok_or("invalid entry key")?;
                 let stem = path
                     .file_stem()
                     .ok_or("invalid shard filename")?
