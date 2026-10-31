@@ -1,3 +1,4 @@
+mod corpus;
 use flate2::read::MultiGzDecoder;
 use rusqlite::{params, Connection};
 use serde_json::{json, Value};
@@ -47,6 +48,19 @@ fn run() -> Result<()> {
             let reader = open_source(&source)?;
             let mut connection = Connection::open(target)?;
             let counts = import_reader(&mut connection, reader)?;
+            println!("{counts:#?}");
+        }
+        "export-corpus" => {
+            let db = args.next().ok_or_else(usage)?;
+            let directory = args.next().ok_or_else(usage)?;
+            if args.next().is_some() {
+                return Err(usage().into());
+            }
+            let connection = Connection::open_with_flags(
+                db,
+                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+            )?;
+            let counts = corpus::export_corpus(&connection, Path::new(&directory))?;
             println!("{counts:#?}");
         }
         "stats" => {
@@ -99,7 +113,7 @@ fn run() -> Result<()> {
 }
 
 fn usage() -> String {
-    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
+    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
 }
 
 fn open_source(path: &str) -> Result<Box<dyn BufRead>> {

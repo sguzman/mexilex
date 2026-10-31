@@ -2,8 +2,7 @@
 /data/
 /*.sqlite
 /*.sqlite-*
-*.jsonl
-*.jsonl.gz
+/*.jsonl
+/*.jsonl.gz
 *.db
 *.db-*
-!.github/
