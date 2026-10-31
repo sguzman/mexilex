@@ -442,7 +442,6 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         "mexico_dialogue_headwords": frequency.len(),
         "wikcionario_mexico_headwords": wikcionario_mexico.len(),
         "radio_evidence_spellings": radio_frequency.len(),
-        "radio_evidence_utterances": 16663,
         "frequency_source": if frequency.is_empty() { Value::Null } else { json!("ACTIV-ES v0.2, Mexican film dialogue; GPL-2.0") },
         "dictionary_language": "es-MX",
         "definition_language": "en"
