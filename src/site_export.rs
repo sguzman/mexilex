@@ -4,7 +4,6 @@
 //! requested on demand from the source commit, keeping Pages well under the
 //! platform's published-site size limit.
 use crate::corpus_load;
-use rusqlite::types::Value as SqlValue;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::error::Error;
