@@ -1,0 +1,59 @@
+name: Seed or refresh tracked lexical corpus
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/seed-corpus.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mexilex-corpus-publish
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Download upstream English-Wiktionary Spanish records
+        run: |
+          mkdir -p data
+          curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
+            --output data/source.jsonl \
+            https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl
+          test "$(stat -c%s data/source.jsonl)" -gt 1000000
+      - name: Build importer and normalize entire dataset
+        run: |
+          cargo run --release -- import data/source.jsonl data/mexilex.sqlite
+          rm -rf corpus
+          cargo run --release -- export-corpus data/mexilex.sqlite corpus
+          sha256sum data/source.jsonl | cut -d' ' -f1 > corpus/upstream.sha256
+          du -sh corpus
+      - name: Enforce Git size budget without dropping vocabulary
+        run: |
+          bytes="$(du -sb corpus | cut -f1)"
+          if test "$bytes" -gt 900000000; then
+            echo "::error::Normalized corpus exceeds 900 MB budget; nothing committed."
+            exit 1
+          fi
+          test -s corpus/manifest.json
+          test "$(find corpus -name '*.jsonl' | wc -l)" -gt 1
+      - name: Commit normalized corpus as one snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- corpus
+          if git diff --cached --quiet; then
+            echo "No corpus changes to commit"
+          else
+            git commit -m "data: refresh Spanish lexical corpus"
+            git push origin HEAD:main
+          fi

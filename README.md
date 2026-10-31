@@ -8,7 +8,7 @@ The target variety is `es-MX` and the definition language is `en`. Importing gen
 
 - Import existing dictionary data automatically, without manually adding words or imposing an arbitrary vocabulary cap.
 - Preserve separate meanings, parts of speech, forms, examples, provenance, and regional tags.
-- Normalize into a small, inspectable SQLite lexical catalogue.
+- Normalize into a Git-tracked, inspectable JSONL lexical corpus with deterministic shards; build SQLite for local consumers.
 - Export read-only sense data suitable for a separate future spaced-repetition trainer.
 - Later: a static, read-only public dictionary website (with System/light/dark selector).
 
@@ -28,6 +28,7 @@ curl -fL --retry 3 \
   -o data/kaikki-spanish.jsonl \
   https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl
 cargo run --release -- import data/kaikki-spanish.jsonl data/mexilex.sqlite
+cargo run --release -- export-corpus data/mexilex.sqlite corpus
 cargo run --release -- stats data/mexilex.sqlite
 cargo run --release -- lookup data/mexilex.sqlite banqueta
 cargo run --release -- export-tsv data/mexilex.sqlite data/all-senses.tsv
@@ -44,7 +45,9 @@ The repository's MIT license applies to **our code**. Wiktionary/Kaikki-derived 
 
 Upstream: [Wiktionary](https://en.wiktionary.org/) · [Kaikki](https://kaikki.org/) · [Wiktextract](https://github.com/tatuylonen/wiktextract). For research use see Tatu Ylonen, *Wiktextract: Wiktionary as Machine-Readable Structured Data*, LREC 2022.
 
-Generated data, source dumps, and SQLite files are **ignored by Git**. A later release pipeline can package versioned catalogues with an attribution manifest. No bulk data is committed to `main`.
+The **normalized corpus in `corpus/` is versioned in Git**; raw upstream dumps in `data/` and built SQLite files are ignored. Each export writes deterministic, hashed JSONL shards and `corpus/manifest.json`. Refreshes are made in one batch commit, never one commit per word. GitHub releases can later distribute a prebuilt SQLite database.
+
+The [one-shot corpus seeding workflow](.github/workflows/seed-corpus.yml) fetches the English-Wiktionary **Spanish** JSONL feed on GitHub runners, imports it, exports the normalized shards, and makes one data commit to `main`. It also supports manual subsequent refreshes. This keeps the initial huge download off your computer, but it remains a costly input download. If the output exceeds the defined Git size budget, the workflow stops instead of silently truncating the dictionary.
 
 ## Architecture
 
@@ -58,4 +61,4 @@ cargo clippy --all-targets -- -D warnings
 cargo test --all-targets
 ```
 
-The checked-in three-line fixture tests the pipeline without downloading the corpus.
+The checked-in three-line fixture tests both the importer and deterministic Git corpus export without downloading the upstream dataset.

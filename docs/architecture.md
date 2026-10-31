@@ -6,7 +6,7 @@ Mexilex models **Spanish lexical records as used in Mexico**, with **English-lan
 
 1. **Entry**: a Spanish written form, part of speech, morphological forms, source edition and source location.
 2. **Sense**: an individual English gloss, labels, examples and a regional-usage flag. Labels belong to senses, not automatically to every meaning of a word.
-3. **Provenance**: upstream edition and source line. The original record remains recoverable from source dumps, not reproduced as thousands of Git commits.
+3. **Provenance**: upstream edition and source line. The raw upstream dump is an ignored build input; the normalized record is exported into versioned JSONL shards in Git, updated with one batch commit.
 4. **Exports**: stateless read models. The trainer should reference a sense identifier and store its review history in its own private database.
 
 The initial SQL schema is in `src/schema.sql`.
@@ -19,9 +19,9 @@ The first classifier recognizes exact `Mexico`, `Mexican`, `Mexican Spanish`, an
 
 ## Import flow
 
-English Wiktionary -> Kaikki/Wiktextract JSONL -> stream only `lang_code=es` -> structured SQLite -> deterministic sense export.
+English Wiktionary -> Kaikki/Wiktextract JSONL -> stream only `lang_code=es` -> structured SQLite -> deterministic, Git-tracked sharded JSONL corpus and stateless flashcard TSV export.
 
-Each import is a replace-all transaction. To support reproducible snapshots, later enhancements should record source dump dates/checksums and publish an attribution manifest. A huge dataset may contain hundreds of thousands of conjugated forms; that volume is not a scope failure.
+Each import is a replace-all transaction. Each Git export writes to a new or empty directory: `corpus/ab/c.jsonl` is one of up to 4096 small, stable hash buckets ordered by entry key. `corpus/manifest.json` records counts and attribution. The seeding workflow records the upstream checksum and commits one full snapshot, with a size-budget safety check. An import may contain hundreds of thousands of inflected forms: that volume is not a scope failure.
 
 IDs currently use upstream sense `id` where present, and otherwise hashed lexical attributes. They are reproducible for unchanged source text but **not guaranteed permanent across upstream edits**. Before the trainer synchronizes reviews across dictionary updates, add an explicit ID reconciliation protocol; do not couple spaced-repetition progress to SQLite row numbers.
 
@@ -38,3 +38,9 @@ The contract needs explicit `language=es-MX`, `definition_language=en`, `sense_k
 ## Out of scope
 
 No universal ontology spanning every language; no manually populated master word list; no forced word cap; no embedded training-progress database; no licensed commercial Mexican dictionary scraping; no automatic declaration that an untagged word is Spain-only.
+
+## Git history and dataset policy
+
+The normalized lexical source **belongs in Git**. The upstream raw Wiktionary dump and the compiled SQLite cache **do not**. Never commit one word or one changed sense at a time; refresh the full corpus through a single batch commit. Stable hash sharding helps Git diff individual entries without forcing a monolithic, ever-changing gigabyte-sized blob into history. This limits history *growth rate*, not the number of lexical entries.
+
+The source dictionary content retains upstream CC BY-SA / GFDL licensing obligations. `LICENSE` is for Mexilex code only. Distributed records, APIs and websites must carry the attribution and license text. Repo size must be monitored: if automatic import exceeds its budget, fail the workflow rather than quietly drop words or pretend coverage is complete. The repository should explicitly identify an incomplete or unseeded corpus until a real import succeeds.
