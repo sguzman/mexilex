@@ -1,0 +1,58 @@
+name: Verify live public Mexilex website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-live-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Confirm public HTML and search indexes respond over HTTPS
+        run: |
+          mkdir -p /tmp/mexilex-live
+          base="https://sguzman.github.io/mexilex/"
+          ready=false
+          for attempt in $(seq 1 18); do
+            if curl --fail --silent --show-error --location --max-time 20 "$base" -o /tmp/mexilex-live/index.html && grep -q "The words of Mexico" /tmp/mexilex-live/index.html; then
+              ready=true
+              break
+            fi
+            echo "Public site not ready yet (attempt $attempt)"
+            sleep 10
+          done
+          test "$ready" = true
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}config.json" -o /tmp/mexilex-live/config.json
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}index/ba.json" -o /tmp/mexilex-live/ba.json
+      - name: Fetch a real Mexican word from its pinned source shard
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const root = '/tmp/mexilex-live/';
+          const config = JSON.parse(fs.readFileSync(root + 'config.json', 'utf8'));
+          const index = JSON.parse(fs.readFileSync(root + 'ba.json', 'utf8'));
+          assert.equal(config.dictionary_language, 'es-MX');
+          assert.equal(config.definition_language, 'en');
+          assert.ok(config.entries > 100000);
+          const banqueta = index.find(row => row[0] === 'banqueta' && row[4] === true);
+          assert.ok(banqueta, 'Missing Mexico-labeled banqueta search entry');
+          assert.match(banqueta[3].toLowerCase(), /sidewalk/);
+          const id = banqueta[1];
+          assert.match(id, /^[0-9a-f]{64}$/);
+          const url = `https://raw.githubusercontent.com/sguzman/mexilex/${config.commit}/corpus/${id.slice(0,2)}/${id[2]}.jsonl`;
+          const response = await fetch(url);
+          assert.equal(response.status, 200, `Unable to retrieve pinned lexical shard: ${url}`);
+          const record = (await response.text()).split('\n').filter(Boolean).map(line => JSON.parse(line)).find(row => row.id === id);
+          assert.ok(record, 'Source shard did not contain selected lexical entry');
+          assert.equal(record.word, 'banqueta');
+          assert.ok(record.senses.some(s => s.mexican_usage === true && /sidewalk/i.test(s.definition_en)));
+          console.log(`Live HTTPS verified: ${config.entries} records, banqueta -> ${banqueta[3]}, pinned commit ${config.commit}`);
+          NODE
