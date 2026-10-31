@@ -26,7 +26,7 @@ jobs:
           base="https://sguzman.github.io/mexilex/"
           ready=false
           for attempt in $(seq 1 18); do
-            if curl --fail --silent --show-error --location --max-time 20 "$base" -o /tmp/mexilex-live/index.html && grep -q "The words of Mexico" /tmp/mexilex-live/index.html; then
+            if curl --fail --silent --show-error --location --max-time 20 "$base" -o /tmp/mexilex-live/index.html && grep -q "mexico-hero-banner" /tmp/mexilex-live/index.html && grep -q "mexico-tricolor-ribbon" /tmp/mexilex-live/index.html; then
               ready=true
               break
             fi
@@ -34,6 +34,12 @@ jobs:
             sleep 10
           done
           test "$ready" = true
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}favicon.svg?v=mx-flag-1" -o /tmp/mexilex-live/favicon.svg
+          grep -q '#006847' /tmp/mexilex-live/favicon.svg
+          grep -q '#ce1126' /tmp/mexilex-live/favicon.svg
+          grep -q 'flag-icons-mx' /tmp/mexilex-live/favicon.svg
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}flag-license.txt" -o /tmp/mexilex-live/flag-license.txt
+          grep -q "MIT License" /tmp/mexilex-live/flag-license.txt
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}config.json" -o /tmp/mexilex-live/config.json
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}index/ba.json" -o /tmp/mexilex-live/ba.json
       - name: Fetch a real Mexican word from its pinned source shard
