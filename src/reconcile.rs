@@ -42,7 +42,9 @@ pub(crate) struct CompareStats {
 }
 
 fn required<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
-    value.get(key).and_then(Value::as_str)
+    value
+        .get(key)
+        .and_then(Value::as_str)
         .ok_or_else(|| format!("missing string field {key}").into())
 }
 
@@ -75,7 +77,9 @@ fn read_study<R: BufRead>(reader: R) -> Result<BTreeMap<String, Entry>> {
         if identity.word.is_empty() {
             return Err(format!("empty headword at line {}", offset + 1).into());
         }
-        let raw_senses = row.get("senses").and_then(Value::as_array)
+        let raw_senses = row
+            .get("senses")
+            .and_then(Value::as_array)
             .ok_or_else(|| format!("missing senses at line {}", offset + 1))?;
         let mut senses = BTreeMap::new();
         if raw_senses.is_empty() {
@@ -91,7 +95,17 @@ fn read_study<R: BufRead>(reader: R) -> Result<BTreeMap<String, Entry>> {
                 return Err(format!("duplicate sense ID in entry at line {}", offset + 1).into());
             }
         }
-        if entries.insert(id.clone(), Entry { id, identity, senses }).is_some() {
+        if entries
+            .insert(
+                id.clone(),
+                Entry {
+                    id,
+                    identity,
+                    senses,
+                },
+            )
+            .is_some()
+        {
             return Err(format!("duplicate lexical entry ID at line {}", offset + 1).into());
         }
     }
@@ -107,7 +121,10 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
     let new = read_study(new_reader)?;
     let mut by_identity: HashMap<Identity, Vec<&Entry>> = HashMap::new();
     for entry in new.values() {
-        by_identity.entry(entry.identity.clone()).or_default().push(entry);
+        by_identity
+            .entry(entry.identity.clone())
+            .or_default()
+            .push(entry);
     }
     let mut stats = CompareStats {
         previous: old.len(),
@@ -119,7 +136,10 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
     for entry in old.values() {
         let exact = new.get(&entry.id);
         let candidates: Vec<&Entry> = if exact.is_none() {
-            by_identity.get(&entry.identity).cloned().unwrap_or_default()
+            by_identity
+                .get(&entry.identity)
+                .cloned()
+                .unwrap_or_default()
         } else {
             Vec::new()
         };
@@ -156,7 +176,10 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
             }
         }
         let options: Vec<&str> = if status == "ambiguous" {
-            candidates.iter().map(|candidate| candidate.id.as_str()).collect()
+            candidates
+                .iter()
+                .map(|candidate| candidate.id.as_str())
+                .collect()
         } else {
             Vec::new()
         };
@@ -192,7 +215,10 @@ pub(crate) fn compare_files(old: &Path, new: &Path, destination: &Path) -> Resul
         let old_file = BufReader::new(File::open(old)?);
         let new_file = BufReader::new(File::open(new)?);
         let mut output = BufWriter::new(
-            OpenOptions::new().write(true).create_new(true).open(destination)?
+            OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(destination)?,
         );
         let stats = compare_readers(old_file, new_file, &mut output)?;
         output.flush()?;
@@ -210,28 +236,36 @@ mod tests {
     use std::io::Cursor;
 
     fn entry(id: &str, word: &str, pos: &str, senses: &[(&str, &str)]) -> String {
-        let senses: Vec<Value> = senses.iter().map(|(id, gloss)| {
-            json!({"id":id,"definition_en":gloss})
-        }).collect();
+        let senses: Vec<Value> = senses
+            .iter()
+            .map(|(id, gloss)| json!({"id":id,"definition_en":gloss}))
+            .collect();
         json!({
             "format_version":1,"source":"mexilex","source_edition":"enwiktionary",
             "lexical_language":"es-MX","definition_language":"en",
             "entry_id":id,"word":word,"part_of_speech":pos,
             "etymology_number":null,"senses":senses
-        }).to_string()
+        })
+        .to_string()
     }
 
     fn compare(old: &str, new: &str) -> (CompareStats, Vec<Value>) {
         let mut bytes = Vec::new();
         let counts = compare_readers(Cursor::new(old), Cursor::new(new), &mut bytes).unwrap();
-        let report: Vec<Value> = String::from_utf8(bytes).unwrap().lines()
-            .map(|line| serde_json::from_str(line).unwrap()).collect();
+        let report: Vec<Value> = String::from_utf8(bytes)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
         (counts, report)
     }
 
     #[test]
     fn exact_snapshot_retains_source_ids_and_glosses() {
-        let snapshot = format!("{}\n", entry("old", "banqueta", "noun", &[("s1", "sidewalk")]));
+        let snapshot = format!(
+            "{}\n",
+            entry("old", "banqueta", "noun", &[("s1", "sidewalk")])
+        );
         let (stats, report) = compare(&snapshot, &snapshot);
         assert_eq!(stats.exact, 1);
         assert_eq!(stats.added_entries, 0);
@@ -262,7 +296,11 @@ mod tests {
     #[test]
     fn homographs_with_multiple_candidates_are_ambiguous() {
         let old = entry("old", "cura", "noun", &[("s1", "priest")]);
-        let new = format!("{}\n{}", entry("new-a", "cura", "noun", &[("s1", "priest")]), entry("new-b", "cura", "noun", &[("s2", "cure")]));
+        let new = format!(
+            "{}\n{}",
+            entry("new-a", "cura", "noun", &[("s1", "priest")]),
+            entry("new-b", "cura", "noun", &[("s2", "cure")])
+        );
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.ambiguous, 1);
         assert_eq!(report[0]["new_entry_id"], Value::Null);
@@ -282,7 +320,12 @@ mod tests {
 
     #[test]
     fn missing_sense_does_not_silently_reassign_reviews() {
-        let old = entry("x", "banco", "noun", &[("financial", "bank"), ("seat", "bench")]);
+        let old = entry(
+            "x",
+            "banco",
+            "noun",
+            &[("financial", "bank"), ("seat", "bench")],
+        );
         let new = entry("x", "banco", "noun", &[("financial", "bank")]);
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.missing_senses, 1);
