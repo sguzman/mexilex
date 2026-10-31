@@ -12,6 +12,14 @@ Mexilex stores its normalized Spanish vocabulary in Git under `corpus/`. The SQL
 
 The [successful publication workflow](https://github.com/sguzman/mexilex/actions/runs/41251273959) downloaded its actual public assets, checked SHA-256 hashes, extracted the study archive and verified 1,946 Wikcionario word/POS rows, 2,304 Mexico-tagged senses, 1,235 matched headword spellings and the `banqueta` evidence.
 
+## Verified lex-v0.3.0 publication
+
+**[Mexilex lexical snapshot v0.3.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.3.0)** was published on 2026-10-31 from commit `e6c9a3ec5d689fdf643d922a2e0fc9dccf457aea`. Its study archive adds `mexico-radio-frequency.jsonl`, `mexico-radio-frequency-manifest.json`, and `CIEMPIESS-SOURCE.md`, preserving the **CC BY-SA 4.0** source attribution and revision separately from GPL film-subtitle evidence and CC BY-SA/GFDL Wiktionary content.
+
+The underlying CIEMPIESS LIGHT sidecar contains 6,250 orthographic surface-word records from 167,118 tokens across 16,663 transcribed radio interview segments, with no original transcript, speaker metadata or review history. These counts do not label any sense as Mexico-specific. The [publishing and independent postpublication download check](https://github.com/sguzman/mexilex/actions/runs/41253033111) succeeded: all three public release assets were downloaded, their SHA-256 checksums verified, and the study archive validated against the expected word/utterance count and *casa* observation.
+
+The earlier v0.1.0 and v0.2.0 public assets remain unchanged.
+
 ## Build and publication
 
 Open **Actions → Package versioned lexical release → Run workflow**. Supply a version such as `0.1.0`.
@@ -40,4 +48,4 @@ A GitHub Actions [consumer check](../.github/workflows/verify-release.yml) downl
 
 The published `lex-v0.2.0` study archive includes `wikcionario-mexico.jsonl`, `wikcionario-mexico-manifest.json` and `WIKCIONARIO-SOURCE.md`. This source uses CC BY-SA/GFDL terms, independent of English Wiktionary glosses and GPL-2.0 film-frequency data. **The original v0.1.0 assets remain immutable and lack this sidecar.**
 
-The [v0.2-ready release preview workflow](https://github.com/sguzman/mexilex/actions/runs/41250676401) passed after adding the Spanish Wiktionary regional evidence sidecar and its attribution. This validates packaging only; **no new public GitHub Release has been created**, and `lex-v0.1.0` remains untouched.
+The original [v0.2 preview](https://github.com/sguzman/mexilex/actions/runs/41250676401) was verified before v0.2.0 publication. It was followed by the independently verified permanent [v0.2.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0); the new radio source is included starting with [v0.3.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.3.0). Each prior release's assets remain unchanged.

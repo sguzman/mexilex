@@ -90,3 +90,9 @@ The corpus CI workflow also creates a **temporary** revised study snapshot from 
 ## Supplemental Wikcionario Mexico-word evidence (published in v0.2.0)
 
 The published [lex-v0.2.0 study package](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0) bundles `wikcionario-mexico.jsonl`, its source manifest, and `WIKCIONARIO-SOURCE.md` with CC BY-SA/GFDL credit. Each `[word, POS, tagged_sense_count, matched]` record describes **a Spanish Wiktionary spelling with independent Mexico-tagged senses**. It does not map to a particular English Wiktionary meaning and must never trigger a trainer to change an English sense-level region label or erase review history. The published `lex-v0.1.0` archive predates this source and remains unchanged.
+
+## Mexican radio conversation evidence (published in v0.3.0)
+
+The [lex-v0.3.0 study archive](https://github.com/sguzman/mexilex/releases/tag/lex-v0.3.0) adds a separate `mexico-radio-frequency.jsonl` sidecar and `mexico-radio-frequency-manifest.json` plus `CIEMPIESS-SOURCE.md` attribution under **CC BY-SA 4.0**. Each record has `[surface_word, occurrences, utterances]`. The 6,250 retained spellings were observed at least twice across 16,663 Central-Mexican radio interview segments. Counts describe a narrow broadcast corpus, not all speakers of Mexican Spanish; they do not identify lemmas or Mexico-exclusive senses, never mutate dictionary meanings, and cannot be merged uncritically with GPL-licensed film-dialogue rates.
+
+The export continues to exclude any private learning history. The [publishing workflow](https://github.com/sguzman/mexilex/actions/runs/41253033111) downloaded the public v0.3.0 study archive and independently verified its source metadata, 167,118-token denominator, 6,250-row count and sample word observation.

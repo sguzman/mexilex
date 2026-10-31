@@ -1,7 +1,7 @@
 # Mexilex
 
 **Public dictionary:** https://sguzman.github.io/mexilex/  
-**Latest verified lexical-data release:** [lex-v0.2.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0)  
+**Latest verified lexical-data release:** [lex-v0.3.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.3.0)  
 **Original release:** [lex-v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0)
 
 **Public dictionary website: [sguzman.github.io/mexilex](https://sguzman.github.io/mexilex/)**
@@ -96,7 +96,7 @@ The [public dictionary website](https://sguzman.github.io/mexilex/) is deployed 
 
 ## Durable lexical releases
 
-Both [lex-v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) and [lex-v0.2.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0) are permanently published with independent SQLite and study archives and SHA-256 checksums. Version 0.2.0 additionally distributes CC BY-SA/GFDL Spanish Wiktionary Mexico-word evidence and its actual public assets passed download and source-count verification. The [release workflow](.github/workflows/release.yml) packages future SQLite and study snapshots from Git with source manifests and license notices; later publications remain opt-in. See [release documentation](docs/releases.md).
+The permanently published [lex-v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0), [lex-v0.2.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0), and [lex-v0.3.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.3.0) releases provide independent SQLite and stateless study archives with SHA-256 checksums. Version 0.2.0 added CC BY-SA/GFDL Spanish Wiktionary Mexico-word evidence, while version 0.3.0 additionally distributes the CC BY-SA 4.0 CIEMPIESS radio-conversation aggregate. The v0.3.0 public assets passed real postpublication download, checksum and source-count verification. The [release workflow](.github/workflows/release.yml) packages future SQLite and study snapshots from Git with source manifests and license notices; later publications remain opt-in. See [release documentation](docs/releases.md).
 
 ## Mexican spoken-language evidence
 
