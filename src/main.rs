@@ -1,6 +1,7 @@
 mod corpus;
 mod corpus_load;
 mod lexical;
+mod reconcile;
 mod site_export;
 mod study_export;
 use flate2::read::MultiGzDecoder;
@@ -95,6 +96,20 @@ fn run() -> Result<()> {
             }
             result?;
         }
+        "compare-study" => {
+            let previous = args.next().ok_or_else(usage)?;
+            let current = args.next().ok_or_else(usage)?;
+            let output = args.next().ok_or_else(usage)?;
+            if args.next().is_some() {
+                return Err(usage().into());
+            }
+            let stats = reconcile::compare_files(
+                Path::new(&previous),
+                Path::new(&current),
+                Path::new(&output),
+            )?;
+            println!("{stats:#?}");
+        }
         "export-study" => {
             let source = args.next().ok_or_else(usage)?;
             let target = args.next().ok_or_else(usage)?;
@@ -176,7 +191,7 @@ fn run() -> Result<()> {
 }
 
 fn usage() -> String {
-    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex build-site <corpus-dir> <empty-site-dir> <full-commit-sha>\n  mexilex export-study <corpus-dir> <new-study.jsonl> [--mexico-only] [--include-forms]\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
+    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex build-site <corpus-dir> <empty-site-dir> <full-commit-sha>\n  mexilex export-study <corpus-dir> <new-study.jsonl> [--mexico-only] [--include-forms]\n  mexilex compare-study <previous-study.jsonl> <current-study.jsonl> <new-report.jsonl>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
 }
 
 fn open_source(path: &str) -> Result<Box<dyn BufRead>> {
