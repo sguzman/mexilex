@@ -1,0 +1,52 @@
+name: Audit Spanish Wiktionary Mexican regional evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/audit-eswiktionary-mexico.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch explicitly Mexico-tagged Spanish Wiktionary records
+        run: |
+          mkdir -p data/wikcionario
+          curl --fail --location --silent --show-error --retry 3 --retry-all-errors \
+            --output data/wikcionario/mexico.jsonl \
+            'https://kaikki.org/eswiktionary/Espa%C3%B1ol/tags/p9/Mexico/kaikki.org-dictionary-Espa%C3%B1ol-tag-Mexico.jsonl'
+          test "$(stat -c%s data/wikcionario/mexico.jsonl)" -gt 1000000
+          sha256sum data/wikcionario/mexico.jsonl
+      - name: Audit source structure and tag semantics before importing
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const lines=fs.readFileSync('data/wikcionario/mexico.jsonl','utf8').trim().split('\n');
+          const entry=JSON.parse(lines[0]);
+          console.log('Source example structure:',JSON.stringify({
+            keys:Object.keys(entry),
+            lang:entry.lang,code:entry.lang_code,word:entry.word,pos:entry.pos,
+            senses:entry.senses?.slice(0,2).map(s=>({keys:Object.keys(s),tags:s.tags,raw_tags:s.raw_tags,categories:s.categories?.slice(0,3)}))
+          }));
+          let spanish=0,matched=0,tagged=0;const words=new Set();
+          for(const line of lines){
+            const v=JSON.parse(line);
+            if(!v.word) throw Error('Missing headword');
+            if(v.lang_code==='es')spanish++;
+            const senses=v.senses||[];
+            for(const sense of senses) {
+              if((sense.tags||[]).includes('Mexico'))tagged++;
+            }
+            words.add(v.word);
+            matched+=senses.length;
+          }
+          console.log(JSON.stringify({source_records:lines.length,spanish,distinct_words:words.size,total_senses:matched,tagged_mexico_senses:tagged}));
+          if(tagged<500)throw Error('Insufficient explicitly tagged Mexico senses; source schema may have changed');
+          NODE
