@@ -1,0 +1,54 @@
+name: Seed versioned Mexico film-dialogue evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/seed-mx-frequency.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mexilex-mexican-evidence
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Download exactly pinned ACTIV-ES v0.2 one-gram word frequencies
+        run: |
+          mkdir -p data evidence
+          curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
+            --output data/aes1grams.csv \
+            https://raw.githubusercontent.com/francojc/activ-es/e42124efbd0c6c30fc8b6a93e5d3a1e9bc4c7e08/activ-es-v.02/wordlists/plain/aes1grams.csv
+          test "$(stat -c%s data/aes1grams.csv)" -gt 3000000
+          sha256sum data/aes1grams.csv
+      - name: Retain only Mexico-attested exact surface headwords from Git corpus
+        run: |
+          cargo run --release -- import-mx-frequency data/aes1grams.csv corpus evidence/activ-es-v02.jsonl
+          test -s evidence/activ-es-v02.jsonl
+          test -s evidence/activ-es-v02.manifest.json
+          test "$(wc -l < evidence/activ-es-v02.jsonl)" -gt 3000
+          grep -q '"casa"' evidence/activ-es-v02.jsonl
+          du -h evidence/activ-es-v02.jsonl
+      - name: Commit derived frequency evidence separately from lexicon
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- evidence/activ-es-v02.jsonl evidence/activ-es-v02.manifest.json
+          if git diff --cached --quiet; then
+            echo "Mexican evidence unchanged"
+          else
+            git commit -m "data: record licensed Mexico dialogue frequency sidecar"
+            git pull --rebase origin main
+            git push origin HEAD:main
+            gh workflow run site.yml --ref main
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
