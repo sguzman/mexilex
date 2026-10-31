@@ -75,7 +75,7 @@ The comparison emits a **non-destructive, one-row-per-previous-entry JSONL repor
 
 **Important:** An `exact` entry-ID match is not automatically a safe content match. Each report row now has `requires_review`. Only `false` means that the old meanings, annotations, forms, and sense set are unchanged. New meanings, modified examples/tags, changed forms, gloss edits, missing senses, and ambiguous matches all set it to `true`. The report identifies `changed_annotation`, `changed_definition`, and `missing` sense statuses, plus `added_sense_ids` and `forms_changed`. The comparison still does not alter trainer data.
 
-For matched entries, individual old senses are tagged `same_definition`, `changed_definition`, or `missing` based on exact source sense ID and definition. There is no fuzzy semantic matching and no automatic deletion of review history. Both inputs must be compatible version-one Mexilex study exports in the `es-MX` → `en` contract. The command refuses to overwrite an existing reconciliation report.
+For matched entries, individual old senses are tagged `same_definition`, `changed_definition`, `changed_annotation`, or `missing` based on source sense ID, definition text, and complete sense metadata. There is no fuzzy semantic matching and no automatic deletion of review history. Both inputs must be compatible version-one Mexilex study exports in the `es-MX` → `en` contract. The command refuses to overwrite an existing reconciliation report.
 
 The build pipeline also compares a full study export to itself, verifying that the complete current snapshot yields exact matches only. Real-world cross-version testing remains a separate acceptance criterion before trainer synchronization is enabled.
 

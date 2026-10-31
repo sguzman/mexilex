@@ -8,18 +8,18 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | --- | ---: | ---: | --- |
 | ✅ Import and normalize a real lexicon | 30% | 100% | English Wiktionary Spanish JSONL → Rust → SQLite; full import of 813,928 entries and 879,019 senses; per-meaning regional labels |
 | ✅ Version the processed vocabulary in Git | 15% | 100% | 4,096 normalized JSONL shards committed on `main`; full snapshot reconstructs SQLite without redownloading upstream |
-| 🟡 Read-only dictionary presentation | 15% | 92% | System/light/dark site, source attribution, indexed lookup, Mexico discovery, split forms; desktop/mobile Chromium QA of generated assets passed with mocked network, **real deployed fetch and mobile-device QA remain** |
-| 🟡 Portable trainer exports | 15% | 98% | 124,444 headword-style entries; downloadable checksummed packages; full same-version reconciliation passed; **validate real cross-version migrations and publish a permanent release before enabling trainer synchronization** |
+| 🟡 Read-only dictionary presentation | 15% | 95% | Deployed System/light/dark site, flag branding, Mexico-specific browse, frequency-ranked film-dialogue browse, split inflections, live HTTPS record and 500-word index verification; **user mobile-device QA remains** |
+| 🟡 Portable trainer exports | 15% | 99% | 124,444 headword-style entries, independent GPL frequency evidence, checksummed public release lex-v0.1.0, and 124,444-entry simulated revision comparison; **validate two real upstream versions before enabling trainer auto-migration** |
 | 🟡 Mexican usage evidence enrichment | 15% | 45% | 2,115 source-verified Mexico-specific senses remain; 12,528 attested words from independently licensed Mexican film dialogue are now versioned in Git, with evidence/provenance separate from semantic tags; **additional representative Mexican sources and corpus bias/coverage remain open** |
-| 🟡 Public website deployment | 10% | 95% | GitHub Pages deployed, live HTTPS smoke test passed for HTML, index and real pinned lexical shard; **user Firefox/phone QA remains** |
+| 🟡 Public website deployment | 10% | 98% | Public GitHub Pages working in user's Firefox; successful deployment and external HTTPS smoke check for original dictionary record, Mexico frequency, and new 500-word browse index; **phone QA remains** |
 
-**Weighted progress: approximately 89% (+4 percentage points from the previous 85% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 91% (+2 percentage points from the previous 89% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
-1. **Website QA:** the public Pages deployment succeeded; verify the actual URL in Firefox on desktop and mobile, including accents, `ñ`, Mexico filters and live raw-entry fetching.
+1. **Website QA:** public Pages deployment and external live data checks have passed, and the user has verified the site in Firefox; finish real phone QA and edge-case interactions.
 2. **Regional evidence:** the first licensed ACTIV-ES Mexican film-dialogue frequency sidecar is imported; pursue broader, representative Mexican written/spoken sources and clearly distinguish frequency from region-specific meanings.
-3. **Trainer contract stability:** `compare-study` now rejects ambiguous, missing, or changed identities and passed a 124,444-entry self-comparison; validate a genuinely different upstream snapshot and consumer-specific migration behavior before synchronizing private reviews.
-4. **Permanent distribution:** the opt-in, versioned packaging workflow passes a full preview build with checksums and license notices. Publish a durable release explicitly when the contract is ready, and verify the published downloads.
+3. **Trainer contract stability:** `compare-study` flags changed definitions, annotations, forms, and sense sets for review and passed a full 124,444-entry simulated upgrade; test two genuinely different upstream snapshots before importing review histories.
+4. **Permanent distribution:** first public [lex-v0.1.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) published with two archives and SHA-256 checksums; validate consumer downloads when integrating the separate trainer.
 
 Do not add additional languages, user accounts, SRS algorithms, or unrelated ontology to Mexilex.

@@ -1,5 +1,8 @@
 # Mexilex
 
+**Public dictionary:** https://sguzman.github.io/mexilex/  
+**First verified lexical-data release:** [lex-v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0)
+
 **Public dictionary website: [sguzman.github.io/mexilex](https://sguzman.github.io/mexilex/)**
 
 **Mexican Spanish lexical data, explained in English.** Mexilex is a public, reproducible dictionary and machine-readable lexical catalogue, not a flashcard scheduler.
@@ -92,8 +95,8 @@ The [public dictionary website](https://sguzman.github.io/mexilex/) is deployed 
 
 ## Durable lexical releases
 
-The [manual release workflow](.github/workflows/release.yml) packages versioned SQLite and study exports from the tracked vocabulary with checksums, source manifests, and license notices. Publication is explicit, not automatic. See [release documentation](docs/releases.md).
+The first versioned [lex-v0.1.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) is published with two verified archives and SHA-256 checksums. The [release workflow](.github/workflows/release.yml) packages future SQLite and study snapshots from Git with source manifests and license notices; later publications remain opt-in. See [release documentation](docs/releases.md).
 
 ## Mexican spoken-language evidence
 
-A separate [GPL-2.0 ACTIV-ES v0.2 sidecar](evidence/README.md), derived from Mexican/Spanish/Argentine film-dialogue word frequencies, now records 12,528 Mexico-attested Spanish headword spellings. Use the dictionary's **Rank by frequency in Mexican film dialogue** option or inspect the source-specific rates in entry details. This frequency signal does **not** turn ordinary Spanish meanings into Mexico-exclusive ones, and no original film dialogue is stored. This evidence retains its own license, independent of Wiktionary content and MIT code.
+A separate [GPL-2.0 ACTIV-ES v0.2 sidecar](evidence/README.md), derived from Mexican/Spanish/Argentine film-dialogue word frequencies, now records 12,528 Mexico-attested Spanish headword spellings. Use **Common in Mexican film dialogue** to browse frequently attested headwords, or the dictionary's **Rank by frequency in Mexican film dialogue** option or inspect the source-specific rates in entry details. This frequency signal does **not** turn ordinary Spanish meanings into Mexico-exclusive ones, and no original film dialogue is stored. This evidence retains its own license, independent of Wiktionary content and MIT code.

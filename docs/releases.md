@@ -2,6 +2,10 @@
 
 Mexilex stores its normalized Spanish vocabulary in Git under `corpus/`. The SQLite database and study export archives are **derived snapshots**, not the canonical source.
 
+## Published first release
+
+**[Mexilex lexical snapshot v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0)** was successfully published with `mexilex-sqlite-v0.1.0.tar.gz`, `mexilex-study-v0.1.0.tar.gz`, and `SHA256SUMS`. The successful packaging/publishing workflow verified code, source reconstruction, data exports, archive contents, and checksums. This is a public GitHub Release, not a 14-day CI artifact. The associated tag pins the generated snapshot's Git commit.
+
 ## Build and publication
 
 Open **Actions → Package versioned lexical release → Run workflow**. Supply a version such as `0.1.0`.
@@ -16,7 +20,7 @@ The SQLite archive includes a generated local dictionary database. The study arc
 
 Lexical-data content retains upstream licenses (not the repository MIT code license). Trainer consumers should pin a release and compare snapshots with `mexilex compare-study` before changing source data, preserving old review events for missing or ambiguous records.
 
-The workflow also performs a preview-only smoke test when its own YAML changes on `main`. This test neither creates a tag nor publishes any release. A **permanent release still requires an explicit manual run with Publish: true**.
+The workflow performs a preview-only smoke test when its YAML changes on `main`. **The first release was explicitly published on 2026-10-31** through a one-time, exact-commit-message-gated release intent; subsequent versions use the ordinary manual workflow with `Publish: true`.
 
 ## Independently licensed Mexican frequency sidecar
 
