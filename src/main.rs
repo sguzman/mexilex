@@ -1,4 +1,5 @@
 mod corpus;
+mod corpus_load;
 use flate2::read::MultiGzDecoder;
 use rusqlite::{params, Connection};
 use serde_json::{json, Value};
@@ -61,6 +62,35 @@ fn run() -> Result<()> {
             let counts = corpus::export_corpus(&connection, Path::new(&directory))?;
             println!("{counts:#?}");
         }
+        "build-from-corpus" => {
+            let directory = args.next().ok_or_else(usage)?;
+            let target = args.next().ok_or_else(usage)?;
+            if args.next().is_some() {
+                return Err(usage().into());
+            }
+            let target = Path::new(&target);
+            if target.exists() {
+                return Err(format!(
+                    "refusing to overwrite existing database: {}",
+                    target.display()
+                ).into());
+            }
+            if let Some(parent) = target.parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+            let result = (|| -> Result<()> {
+                let mut db = Connection::open(target)?;
+                let counts = corpus_load::load_corpus(&mut db, Path::new(&directory))?;
+                println!("{counts:#?}");
+                Ok(())
+            })();
+            if result.is_err() {
+                let _ = std::fs::remove_file(target);
+            }
+            result?;
+        }
         "stats" => {
             let db = args.next().ok_or_else(usage)?;
             if args.next().is_some() {
@@ -111,7 +141,7 @@ fn run() -> Result<()> {
 }
 
 fn usage() -> String {
-    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
+    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
 }
 
 fn open_source(path: &str) -> Result<Box<dyn BufRead>> {

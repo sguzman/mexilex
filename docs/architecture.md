@@ -44,3 +44,7 @@ No universal ontology spanning every language; no manually populated master word
 The normalized lexical source **belongs in Git**. The upstream raw Wiktionary dump and the compiled SQLite cache **do not**. Never commit one word or one changed sense at a time; refresh the full corpus through a single batch commit. Stable hash sharding helps Git diff individual entries without forcing a monolithic, ever-changing gigabyte-sized blob into history. This limits history *growth rate*, not the number of lexical entries.
 
 The source dictionary content retains upstream CC BY-SA / GFDL licensing obligations. `LICENSE` is for Mexilex code only. Distributed records, APIs and websites must carry the attribution and license text. Repo size must be monitored: if automatic import exceeds its budget, fail the workflow rather than quietly drop words or pretend coverage is complete. The repository should explicitly identify an incomplete or unseeded corpus until a real import succeeds.
+
+## Rebuilding the index from Git
+
+`build-from-corpus corpus data/mexilex.sqlite` regenerates a local SQLite index without fetching the raw third-party dump. It validates the corpus format version, languages, shard placement, uniqueness, and manifest counts. SQLite is a derived consumer artifact, while Git's normalized shards remain the authoritative public lexical dataset. The original upstream line number is not included in this normalized snapshot and is represented as zero when rebuilding.

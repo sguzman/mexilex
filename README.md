@@ -14,6 +14,19 @@ The target variety is `es-MX` and the definition language is `en`. Importing gen
 
 Mexilex will **not** hold user accounts, flashcard review dates, retention scores, or other private learning progress. A separate Rust/egui application will own those.
 
+## Use the already-committed dictionary
+
+The normalized Spanish words **live in `corpus/` in Git**. To use them, build the local SQLite search index entirely from the cloned repository, without any upstream download:
+
+```sh
+cargo run --release -- build-from-corpus corpus data/mexilex.sqlite
+cargo run --release -- stats data/mexilex.sqlite
+cargo run --release -- lookup data/mexilex.sqlite banqueta
+cargo run --release -- export-tsv data/mexilex.sqlite data/all-senses.tsv
+```
+
+Rebuilding checks the tracked corpus manifest against the number of entries, senses, Mexico-labeled senses, and shards. The command refuses to overwrite an existing database; remove or move the existing generated index before rebuilding. Since `source_line` is not exported to the normalized corpus, reconstructed indexes store `0` there while preserving the source edition.
+
 ## Source and first import
 
 Start with the **English edition of Wiktionary's Spanish data**, structured by [Kaikki / Wiktextract](https://kaikki.org/dictionary/Spanish/). This is a Spanish vocabulary source, *not* an English dictionary. Its glosses are in English.
