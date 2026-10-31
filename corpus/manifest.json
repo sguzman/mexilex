@@ -1,0 +1,17 @@
+{
+  "attribution": "English Wiktionary contributors via Kaikki/Wiktextract",
+  "definition_language": "en",
+  "entry_count": 813928,
+  "format_version": 1,
+  "lexical_language": "es-MX",
+  "license_note": "Wiktionary-derived data retains upstream CC BY-SA and GFDL obligations; the MIT code license does not apply to the corpus.",
+  "license_urls": [
+    "https://en.wiktionary.org/wiki/Wiktionary:Copyrights",
+    "https://creativecommons.org/licenses/by-sa/4.0/"
+  ],
+  "mexico_labeled_sense_count": 2115,
+  "sense_count": 879019,
+  "shard_count": 4096,
+  "source_edition": "enwiktionary",
+  "source_url": "https://kaikki.org/dictionary/Spanish/"
+}
