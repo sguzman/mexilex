@@ -31,6 +31,7 @@ struct SearchRecord {
     form: bool,
     normalized: String,
     frequency: Option<[f64; 4]>,
+    wikcionario_mexico: bool,
 }
 
 fn normalize(value: &str) -> String {
@@ -89,7 +90,8 @@ fn write_indexes(groups: BTreeMap<String, Vec<SearchRecord>>, directory: &Path) 
                     record.gloss,
                     record.mexico,
                     record.form,
-                    record.frequency
+                    record.frequency,
+                    record.wikcionario_mexico
                 ]),
             )?;
         }
@@ -150,6 +152,53 @@ fn load_mexican_frequency(corpus: &Path) -> Result<BTreeMap<String, [f64; 4]>> {
     Ok(by_word)
 }
 
+fn load_wikcionario_mexico(corpus: &Path) -> Result<BTreeMap<String, usize>> {
+    let base = corpus.parent().unwrap_or_else(|| Path::new("."));
+    let path = base.join("evidence/eswiktionary-mexico.jsonl");
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let manifest: Value = serde_json::from_reader(File::open(
+        base.join("evidence/eswiktionary-mexico.manifest.json"),
+    )?)?;
+    if manifest["format_version"].as_u64() != Some(1)
+        || manifest["source_edition"].as_str() != Some("eswiktionary")
+    {
+        return Err("unrecognized Spanish Wiktionary Mexico evidence".into());
+    }
+    let mut by_word: BTreeMap<String, usize> = BTreeMap::new();
+    let mut seen = BTreeMap::new();
+    let mut all_senses = 0u64;
+    for line in BufReader::new(File::open(path)?).lines() {
+        let row: Value = serde_json::from_str(&line?)?;
+        let cells = row.as_array().ok_or("malformed Wikcionario evidence row")?;
+        if cells.len() != 4 {
+            return Err("expected four Wikcionario evidence columns".into());
+        }
+        let word = cells[0].as_str().ok_or("missing Wikcionario spelling")?;
+        let pos = cells[1].as_str().ok_or("missing Wikcionario POS")?;
+        let senses = cells[2].as_u64().ok_or("missing Wikcionario regional sense count")?;
+        let matched = cells[3].as_bool().ok_or("missing Wikcionario headword match")?;
+        if word.trim().is_empty() || pos.trim().is_empty() || senses == 0 {
+            return Err("invalid Wikcionario regional evidence".into());
+        }
+        if seen.insert((word.to_owned(), pos.to_owned()), true).is_some() {
+            return Err("duplicate Wikcionario word/POS".into());
+        }
+        all_senses += senses;
+        if matched {
+            *by_word.entry(word.to_lowercase()).or_default() += senses as usize;
+        }
+    }
+    if manifest["distinct_word_pos"].as_u64() != Some(seen.len() as u64)
+        || manifest["source_senses"].as_u64() != Some(all_senses)
+        || manifest["matched_spellings"].as_u64() != Some(by_word.len() as u64)
+    {
+        return Err("Wikcionario evidence differs from manifest".into());
+    }
+    Ok(by_word)
+}
+
 pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Result<SiteStats> {
     if commit.len() != 40 || !commit.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err("expected a full 40-digit Git commit SHA".into());
@@ -174,6 +223,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     let mut groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
     let mut inflection_groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
     let frequency = load_mexican_frequency(corpus)?;
+    let wikcionario_mexico = load_wikcionario_mexico(corpus)?;
     let mut stats = SiteStats::default();
     let mut mexican_browse: Vec<Value> = Vec::new();
     let mut dialogue_browse: BTreeMap<String, Value> = BTreeMap::new();
@@ -219,7 +269,9 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                         str_field(&record, "part_of_speech")?,
                         gloss.chars().take(140).collect::<String>(),
                         true,
-                        false
+                        false,
+                        frequency.get(&word.to_lowercase()),
+                        wikcionario_mexico.contains_key(&word.to_lowercase())
                     ]));
                 }
                 if !form {
@@ -231,7 +283,8 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                             gloss.chars().take(140).collect::<String>(),
                             mexican,
                             false,
-                            rate
+                            rate,
+                            wikcionario_mexico.contains_key(&word.to_lowercase())
                         ]);
                         let slot = dialogue_browse
                             .entry(word.to_lowercase())
@@ -255,6 +308,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                     form,
                     normalized,
                     frequency: frequency.get(&word.to_lowercase()).copied(),
+                    wikcionario_mexico: wikcionario_mexico.contains_key(&word.to_lowercase()),
                 });
             }
         }
@@ -309,6 +363,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
             "mexico-frequency-license.txt",
             include_str!("../evidence/ACTIV-ES-LICENSE"),
         ),
+        ("wikcionario-source.txt", include_str!("../evidence/WIKCIONARIO-SOURCE.md")),
     ] {
         fs::write(destination.join(name), content)?;
     }
@@ -322,6 +377,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         "mexico_labeled_entries": stats.mexico_labeled_entries,
         "inflected_entries": stats.inflected_entries,
         "mexico_dialogue_headwords": frequency.len(),
+        "wikcionario_mexico_headwords": wikcionario_mexico.len(),
         "frequency_source": if frequency.is_empty() { Value::Null } else { json!("ACTIV-ES v0.2, Mexican film dialogue; GPL-2.0") },
         "dictionary_language": "es-MX",
         "definition_language": "en"
