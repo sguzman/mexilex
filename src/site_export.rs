@@ -349,7 +349,9 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                     }
                 }
                 if !form {
-                    if let Some([occurrences, _utterances]) = radio_frequency.get(&word.to_lowercase()) {
+                    if let Some([occurrences, _utterances]) =
+                        radio_frequency.get(&word.to_lowercase())
+                    {
                         let candidate = json!([
                             word,
                             id,
