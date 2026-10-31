@@ -43,3 +43,14 @@ The example above illustrates the core fields; real records retain the full sens
 - Public redistribution must preserve Wiktionary's separate lexical-content licensing and attribution (see [CORPUS-LICENSE.md](../CORPUS-LICENSE.md)); Mexilex code remains MIT licensed.
 
 No manual vocabulary ceiling is enforced. Statistics from the site build indicate the majority of imported records are inflected forms, so the default study export is intentionally much smaller than the full dictionary.
+
+## Downloadable build artifact
+
+The [Validate committed lexical corpus](../.github/workflows/validate-corpus.yml) workflow now packages two files in the `mexilex-study-data` artifact:
+
+- `study.jsonl`: all headword-style entries, excluding pure inflections by default.
+- `mexico-labeled.jsonl`: smaller subset with at least one explicitly Mexico-tagged sense.
+
+Each artifact also contains `manifest.json` with the source commit and language contract, `SHA256SUMS`, and `CORPUS-LICENSE.md`. This permits the future trainer to import a verified snapshot without cloning the entire source corpus or downloading Wiktionary.
+
+**Artifact retention is 14 days.** It is not a permanent release channel, and not an upload of personal review history. For durable public distribution, a later release workflow should publish these files with stable version names and checksums.

@@ -38,3 +38,23 @@ jobs:
           grep -q '"word":"banqueta"' data/study.jsonl
           cargo run --release -- export-study corpus data/mexican-study.jsonl --mexico-only
           test "$(wc -l < data/mexican-study.jsonl)" -gt 1000
+      - name: Package verified study exports with source and checksums
+        run: |
+          mkdir -p data/study-package
+          cp data/study.jsonl data/study-package/study.jsonl
+          cp data/mexican-study.jsonl data/study-package/mexico-labeled.jsonl
+          cp CORPUS-LICENSE.md data/study-package/CORPUS-LICENSE.md
+          printf '{"format_version":1,"source":"mexilex","source_git_commit":"%s","lexical_language":"es-MX","definition_language":"en","export_kind":"study-entries","default_excludes_pure_inflections":true}\n' "$GITHUB_SHA" > data/study-package/manifest.json
+          (
+            cd data/study-package
+            sha256sum study.jsonl mexico-labeled.jsonl manifest.json > SHA256SUMS
+          )
+          test "$(wc -l < data/study-package/study.jsonl)" -gt 100000
+          test "$(wc -l < data/study-package/mexico-labeled.jsonl)" -gt 1000
+      - name: Upload study-export package for the external trainer
+        uses: actions/upload-artifact@v4
+        with:
+          name: mexilex-study-data
+          path: data/study-package/
+          if-no-files-found: error
+          retention-days: 14
