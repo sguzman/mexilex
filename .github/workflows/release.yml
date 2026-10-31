@@ -165,7 +165,7 @@ jobs:
           assert.equal(radio.token_total, 167118);
           assert.equal(radio.published_surface_tokens, 6250);
           assert.equal(radio.license, "CC BY-SA 4.0; see CIEMPIESS-SOURCE.md");
-          const speech = fs.readFileSync(folder + "mexico-radio-frequency.jsonl", "utf8").trimEnd().split("\\n").map(JSON.parse);
+          const speech = fs.readFileSync(folder + "mexico-radio-frequency.jsonl", "utf8").trimEnd().split('\n').map(JSON.parse);
           assert.equal(speech.length, 6250);
           assert.deepEqual(speech.find(row => row[0] === "casa"), ["casa", 43, 42]);
           const rows = fs.readFileSync(folder + 'wikcionario-mexico.jsonl', 'utf8').trimEnd().split('\n').map(JSON.parse);
