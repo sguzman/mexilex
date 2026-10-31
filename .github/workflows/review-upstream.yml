@@ -7,6 +7,9 @@ on:
       - ".github/workflows/review-upstream.yml"
       - "scripts/summarize-upstream-review.mjs"
   workflow_dispatch:
+  schedule:
+    # Weekly, Monday 12:00 UTC. Read-only: no automatic corpus or trainer mutation.
+    - cron: "0 12 * * 1"
 
 permissions:
   contents: read
@@ -43,9 +46,11 @@ jobs:
           if test "$tracked" = "$downloaded"; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             printf 'Upstream extract unchanged. SHA-256: %s\n' "$downloaded" | tee data/upstream-review/status.txt
+            echo "::notice::Kaikki Spanish extraction unchanged; no reconciliation run"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             printf 'New upstream bytes available. Old SHA-256: %s; new SHA-256: %s\n' "$tracked" "$downloaded" | tee data/upstream-review/status.txt
+            echo "::warning::Kaikki Spanish extraction changed; this review is advisory and never migrates progress or updates the corpus"
           fi
       - name: Rebuild a NEW, disposable snapshot from actual upstream contents
         if: steps.source.outputs.changed == 'true'
@@ -72,6 +77,27 @@ jobs:
             data/upstream-review/source.sha256 \
             > data/upstream-review/summary.json
           cat data/upstream-review/summary.json
+      - name: Summarize read-only source review in Actions
+        if: always()
+        run: |
+          {
+            echo '## Mexilex weekly upstream snapshot review'
+            echo ''
+            if test -s data/upstream-review/status.txt; then
+              cat data/upstream-review/status.txt
+            else
+              echo 'No validated upstream comparison status (check the failed step).'
+            fi
+            echo ''
+            echo 'This workflow never commits new dictionary data, publishes releases, or migrates user study histories.'
+            if test -s data/upstream-review/summary.json; then
+              echo ''
+              echo '### Real upstream reconciliation'
+              echo '~~~json'
+              cat data/upstream-review/summary.json
+              echo '~~~'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload limited evidence without any automatic corpus mutation
         uses: actions/upload-artifact@v4
         with:

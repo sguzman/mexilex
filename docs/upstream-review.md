@@ -2,6 +2,8 @@
 
 [Review real upstream Wiktionary snapshot safely](../.github/workflows/review-upstream.yml) inspects the current [Kaikki English-Wiktionary Spanish JSONL](https://kaikki.org/dictionary/Spanish/) without touching `main` vocabulary, deployment, releases, or personal training data.
 
+The pipeline also runs **weekly on Mondays at 12:00 UTC** through GitHub Actions. A cron review is bounded and entirely read-only. If the current Kaikki extract matches the pinned upstream SHA-256, it skips expensive conversion and records the unchanged status. If the bytes have genuinely changed, it generates a disposable comparison and a visible Actions run summary; no commit, release, or trainer migration occurs automatically. Scheduled runs depend on GitHub Actions scheduling and are not a guarantee of instantaneous notification.
+
 This pipeline intentionally follows these rules:
 
 1. Download an upstream snapshot, verify size, and calculate SHA-256. Compare with `corpus/upstream.sha256`. **If identical, report "unchanged" and skip the costly rebuild. Do not claim that two distinct revisions were compared.**
@@ -29,3 +31,7 @@ The separate [Seed or refresh tracked lexical corpus](../.github/workflows/seed-
 The source checksum is independently checked again at publication time. The workflow rejects unchanged bytes, reconstructs the candidate outside `corpus/`, verifies Rust formatting, Clippy and tests, generates a real old-versus-new reconciliation report, rejects a corpus-size change exceeding 15%, and enforces a 900 MB normalized-Git budget. The [guard script](../scripts/guard-upstream-refresh.mjs) rejects candidate reports exceeding the approved review budget or omitting previous study entries. Only after all checks pass is the tracked `corpus/` replaced in one Git commit.
 
 The [unit test](../tests/upstream-refresh.test.mjs) uses 100,001 synthetic entries to exercise the same minimum-size checks and rejects both budget violations and large corpus changes. No refresh has been performed by this new gate; the existing dictionary, deployed site, and v0.1.0 release remain unchanged.
+
+## Scheduling and genuine historical editions
+
+The scheduled inspection uses the existing pinned current-source checksum as its baseline; it does **not** pretend that prior v0.1/v0.2/v0.3 **release packages** are independent upstream Wiktionary editions, because those releases reused one lexical corpus. A separately published [July 2026 English Wiktionary-derived flattened dataset](https://huggingface.co/datasets/jake-anto/wiktionary) uses a different parser and relational schema, so it cannot simply be fed into the same Rust JSONL importer or treated as the missing compatible full snapshot. A successful review of genuinely different compatible Kaikki inputs, preserving the conservative migration report, remains the trainer acceptance criterion. The monthly/weekly inspection never bypasses the manually approved refresh gate.
