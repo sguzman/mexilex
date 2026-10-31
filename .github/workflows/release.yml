@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/release.yml"
       - ".github/release-intents/lex-v0.1.0.txt"
+      - ".github/release-intents/lex-v0.2.0.txt"
   workflow_dispatch:
     inputs:
       version:
@@ -30,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      VERSION: ${{ inputs.version || '0.1.0' }}
+      VERSION: ${{ inputs.version || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.2.0' && '0.2.0') || '0.1.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +100,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Publish permanent release assets
-        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.1.0') }}"
+        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.event.head_commit.message == 'release: publish lex-v0.1.0' || github.event.head_commit.message == 'release: publish lex-v0.2.0')) }}"
         run: |
           cat > data/release-notes.md <<EOF
           Source: English Wiktionary Spanish via Kaikki/Wiktextract.
@@ -108,7 +109,10 @@ jobs:
 
           The SQLite archive contains a generated database; the study archive
           contains stateless headword-oriented vocabulary, Mexico-labeled entries,
-          and a separate GPL-2.0 ACTIV-ES Mexican film-dialogue frequency sidecar.
+          a separate GPL-2.0 ACTIV-ES Mexican film-dialogue frequency sidecar,
+          and independently tagged Spanish Wiktionary (Wikcionario) Mexico-word
+          evidence licensed under CC BY-SA/GFDL. Neither secondary source
+          changes the English-Wiktionary sense meanings or Mexican sense labels.
           See CORPUS-LICENSE.md in each archive for upstream licensing.
           Do not erase trainer review history when changing dictionary snapshots;
           use the compare-study reconciliation command first.
@@ -120,3 +124,35 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Mexilex lexical snapshot v$VERSION" \
             --notes-file data/release-notes.md
+      - name: Verify public release assets after publication
+        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.event.head_commit.message == 'release: publish lex-v0.1.0' || github.event.head_commit.message == 'release: publish lex-v0.2.0')) }}"
+        run: |
+          mkdir -p data/published-release
+          gh release download "lex-v$VERSION" --repo "$GITHUB_REPOSITORY" --dir data/published-release
+          (
+            cd data/published-release
+            sha256sum --check SHA256SUMS
+            test -s "mexilex-sqlite-v$VERSION.tar.gz"
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q 'wikcionario-mexico.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q 'WIKCIONARIO-SOURCE.md'
+          )
+          mkdir -p data/published-study
+          tar -xzf "data/published-release/mexilex-study-v$VERSION.tar.gz" -C data/published-study
+          test "$(wc -l < data/published-study/wikcionario-mexico.jsonl)" -eq 1946
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const folder = 'data/published-study/';
+          const manifest = JSON.parse(fs.readFileSync(folder + 'release-manifest.json', 'utf8'));
+          const regional = JSON.parse(fs.readFileSync(folder + 'wikcionario-mexico-manifest.json', 'utf8'));
+          assert.equal(manifest.lexical_language, 'es-MX');
+          assert.equal(manifest.definition_language, 'en');
+          assert.equal(regional.source_senses, 2304);
+          assert.equal(regional.matched_spellings, 1235);
+          assert.equal(regional.distinct_word_pos, 1946);
+          const rows = fs.readFileSync(folder + 'wikcionario-mexico.jsonl', 'utf8').trimEnd().split('\n').map(JSON.parse);
+          assert.ok(rows.every(row => Array.isArray(row) && row.length === 4 && typeof row[3] === 'boolean'));
+          assert.ok(rows.some(row => row[0] === 'banqueta' && row[3] === true));
+          assert.ok(rows.every(row => !('review_history' in row)));
+          console.log('Public ' + manifest.version + ' release verified with separate Wikcionario Mexico evidence');
+          NODE
