@@ -24,14 +24,26 @@ test("refresh guard approves unchanged identities but rejects unreviewed changes
     };
     await writeFile(oldManifest, JSON.stringify(manifest));
     await writeFile(nextManifest, JSON.stringify({...manifest, entry_count: 813930}));
-    const oldLine = JSON.stringify({entry_id:"x"}) + "\n";
-    const unchangedRow = JSON.stringify({format_version:1,status:"exact",requires_review:false}) + "\n";
-    const changedRow = JSON.stringify({format_version:1,status:"missing",requires_review:true}) + "\n";
     const count = 100001;
+    const id = index => index.toString(16).padStart(64, "0");
+    const oldRows = Array.from({length: count}, (_, index) => JSON.stringify({
+      format_version: 1, source: "mexilex",
+      lexical_language: "es-MX", definition_language: "en",
+      entry_id: id(index)
+    })).join("\n") + "\n";
+    const unchangedRows = Array.from({length: count}, (_, index) => JSON.stringify({
+      format_version: 1, status: "exact", requires_review: false,
+      old_entry_id: id(index), new_entry_id: id(index)
+    })).join("\n") + "\n";
+    const changedRows = Array.from({length: count}, (_, index) => JSON.stringify({
+      format_version: 1, status: index === count-1 ? "missing" : "exact",
+      requires_review: index === count-1,
+      old_entry_id: id(index), new_entry_id: index === count-1 ? null : id(index)
+    })).join("\n") + "\n";
     await Promise.all([
-      writeFile(oldStudy, oldLine.repeat(count)),
-      writeFile(unchanged, unchangedRow.repeat(count)),
-      writeFile(changed, unchangedRow.repeat(count-1) + changedRow)
+      writeFile(oldStudy, oldRows),
+      writeFile(unchanged, unchangedRows),
+      writeFile(changed, changedRows)
     ]);
     const success = await inspect(oldManifest, nextManifest, oldStudy, unchanged, "0");
     assert.equal(success.previous_study_entries, count);
@@ -44,6 +56,27 @@ test("refresh guard approves unchanged identities but rejects unreviewed changes
     assert.equal(approved.statuses.missing, 1);
     await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, changed, "one"),
       /nonnegative integer/);
+    // A report with the right row count but one missing old ID must fail.
+    const duplicateRows = unchangedRows.trimEnd().split("\n");
+    duplicateRows[count - 1] = duplicateRows[0];
+    const duplicateReport = join(folder, "duplicate-report.jsonl");
+    await writeFile(duplicateReport, duplicateRows.join("\n") + "\n");
+    await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, duplicateReport, "0"),
+      /Duplicate previous lexical ID in reconciliation report/);
+    // Candidate matches cannot merge two different previous records.
+    const sharedTarget = id(count + 1);
+    const conflictRows = unchangedRows.trimEnd().split("\n");
+    for (const index of [0, 1]) {
+      conflictRows[index] = JSON.stringify({
+        format_version: 1, status: "candidate_review", requires_review: true,
+        old_entry_id: id(index), new_entry_id: sharedTarget
+      });
+    }
+    const conflicting = join(folder, "conflicting-candidates.jsonl");
+    await writeFile(conflicting, conflictRows.join("\n") + "\n");
+    await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, conflicting, "2"),
+      /Two old entries cannot claim the same candidate/);
+
     await writeFile(nextManifest, JSON.stringify({...manifest, entry_count: 450000}));
     await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, unchanged, "100001"),
       /more than 15%/);

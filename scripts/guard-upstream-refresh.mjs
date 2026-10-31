@@ -20,10 +20,21 @@ export async function inspect(oldManifest, newManifest, oldStudy, report, maximu
   assert.ok(Number.isFinite(ratio) && ratio >= 0.85 && ratio <= 1.15,
     "Upstream entry count changed by more than 15%; refuse publication");
 
-  let previous = 0;
+  const previousIds = new Set();
   for await (const line of createInterface({ input: createReadStream(oldStudy), crlfDelay: Infinity })) {
-    if (line.trim()) previous++;
+    if (!line.trim()) continue;
+    const row = JSON.parse(line);
+    assert.equal(row.format_version, 1, "Invalid previous study contract");
+    assert.equal(row.source, "mexilex");
+    assert.equal(row.lexical_language, "es-MX");
+    assert.equal(row.definition_language, "en");
+    assert.match(row.entry_id, /^[a-f0-9]{64}$/, "Invalid previous lexical ID");
+    assert.ok(!previousIds.has(row.entry_id), "Duplicate previous lexical ID");
+    previousIds.add(row.entry_id);
   }
+  const previous = previousIds.size;
+  const seenOld = new Set();
+  const proposedTargets = new Set();
   const statuses = { exact: 0, candidate_review: 0, ambiguous: 0, id_conflict: 0, missing: 0 };
   let observed = 0;
   let requiresReview = 0;
@@ -31,8 +42,20 @@ export async function inspect(oldManifest, newManifest, oldStudy, report, maximu
     if (!line.trim()) continue;
     const row = JSON.parse(line);
     assert.equal(row.format_version, 1);
+    assert.ok(previousIds.has(row.old_entry_id), "Report references an unknown previous lexical ID");
+    assert.ok(!seenOld.has(row.old_entry_id), "Duplicate previous lexical ID in reconciliation report");
+    seenOld.add(row.old_entry_id);
     assert.ok(Object.hasOwn(statuses, row.status), "Unknown study status");
     assert.equal(typeof row.requires_review, "boolean");
+    if (row.status === "exact") {
+      assert.equal(row.new_entry_id, row.old_entry_id, "Exact match must preserve lexical ID");
+    } else if (row.status === "candidate_review") {
+      assert.match(row.new_entry_id, /^[a-f0-9]{64}$/, "Candidate must reference one valid new lexical ID");
+      assert.ok(!proposedTargets.has(row.new_entry_id), "Two old entries cannot claim the same candidate");
+      proposedTargets.add(row.new_entry_id);
+    } else {
+      assert.equal(row.new_entry_id, null, "Unresolved status may not select a new lexical ID");
+    }
     statuses[row.status]++;
     if (row.requires_review) requiresReview++;
     if (row.status !== "exact") assert.equal(row.requires_review, true,
@@ -41,6 +64,7 @@ export async function inspect(oldManifest, newManifest, oldStudy, report, maximu
   }
   assert.ok(previous > 100_000, "Previous real study export unexpectedly small");
   assert.equal(observed, previous, "One report row required per previous study entry");
+  assert.equal(seenOld.size, previous, "All previous lexical IDs must be reconciled once");
   assert.equal(Object.values(statuses).reduce((sum, value) => sum + value, 0), previous);
   assert.ok(requiresReview <= max,
     "Extraction exceeds reviewed migration budget: " + requiresReview + " > " + max);
