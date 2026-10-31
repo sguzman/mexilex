@@ -1,0 +1,41 @@
+name: Audit licensed Mexican radio-conversation transcripts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/audit-ciempiess.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Download pinned CIEMPIESS LIGHT text metadata only
+        run: |
+          mkdir -p data/ciempiess-audit
+          curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
+            --max-time 90 \
+            -o data/ciempiess-audit/metadata.tsv \
+            "https://huggingface.co/datasets/ciempiess/ciempiess_light/resolve/e9e6dc556ba8479f54160701a7542a67de1fbe14/corpus/files/metadata_train.tsv"
+          test "$(wc -c < data/ciempiess-audit/metadata.tsv)" -gt 100000
+          sha256sum data/ciempiess-audit/metadata.tsv
+      - name: Inspect header and count without printing personal audio metadata
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const rows = fs.readFileSync('data/ciempiess-audit/metadata.tsv', 'utf8').trimEnd().split(/\r?\n/);
+          const headers = rows[0].split('\t');
+          assert.ok(headers.includes('normalized_text'), 'Expected normalized transcript column');
+          assert.ok(headers.includes('audio_id'), 'Expected audio ID column');
+          assert.ok(rows.length > 10000 && rows.length < 30000, 'Unexpected number of transcriptions');
+          const col = headers.indexOf('normalized_text');
+          const transcriptCount = rows.slice(1).filter(line => line.split('\t')[col]?.trim()).length;
+          assert.ok(transcriptCount > 10000, 'Too few transcribed utterances');
+          console.log(JSON.stringify({rows: rows.length - 1, transcribed: transcriptCount, fields: headers, textBytes: fs.statSync('data/ciempiess-audit/metadata.tsv').size}));
+          NODE
