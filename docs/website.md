@@ -29,7 +29,7 @@ The [website workflow](../.github/workflows/site.yml) builds and tests the index
 
 The [website workflow](../.github/workflows/site.yml) now automatically deploys the validated static site after each site-relevant `main` change. The deployment job succeeded on 2026-10-31, and GitHub reported the URL above. No extra repository deployment variable is required.
 
-An independent HTTP check from this execution environment was not possible because its external DNS/network access failed. The deployment itself is verified by GitHub Actions, but end-user Firefox and actual cross-origin source fetches still need confirmation; do not conflate those separate checks.
+An external GitHub Actions runner successfully fetched the live HTML, the deployed search index and the pinned `raw.githubusercontent.com` lexical shard for **banqueta**, verifying **813,928 entries** and its Mexico-tagged **sidewalk** meaning over HTTPS. [Live HTTP verification](https://github.com/sguzman/mexilex/actions/runs/41241399334) succeeded on 2026-10-31. User Firefox and phone QA remain separate acceptance steps. The live HTTPS test will also rerun after future successful website deployment workflows.
 
 Deployment verification run: https://github.com/sguzman/mexilex/actions/runs/41241157586
 

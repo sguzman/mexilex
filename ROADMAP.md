@@ -11,9 +11,9 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | 🟡 Read-only dictionary presentation | 15% | 92% | System/light/dark site, source attribution, indexed lookup, Mexico discovery, split forms; desktop/mobile Chromium QA of generated assets passed with mocked network, **real deployed fetch and mobile-device QA remain** |
 | 🟡 Portable trainer exports | 15% | 98% | 124,444 headword-style entries; downloadable checksummed packages; full same-version reconciliation passed; **validate real cross-version migrations and publish a permanent release before enabling trainer synchronization** |
 | 🟡 Mexican usage evidence enrichment | 15% | 15% | 2,115 source-verified Mexico-labeled senses and [licensing-aware source audit](docs/mexican-source-audit.md); **no unverified commercial/bulk dictionary import; source selection and frequency evidence are still open** |
-| 🟡 Public website deployment | 10% | 85% | GitHub Pages build and deploy jobs succeeded; GitHub reported https://sguzman.github.io/mexilex/; **user Firefox and live external fetch verification still outstanding** |
+| 🟡 Public website deployment | 10% | 95% | GitHub Pages deployed, live HTTPS smoke test passed for HTML, index and real pinned lexical shard; **user Firefox/phone QA remains** |
 
-**Weighted progress: approximately 84% (+8 percentage points from the previous 76% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 85% (+9 percentage points from the previous 76% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
