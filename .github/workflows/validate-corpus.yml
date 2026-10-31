@@ -72,15 +72,32 @@ jobs:
           cp evidence/eswiktionary-mexico.jsonl data/study-package/wikcionario-mexico.jsonl
           cp evidence/eswiktionary-mexico.manifest.json data/study-package/wikcionario-mexico-manifest.json
           cp evidence/WIKCIONARIO-SOURCE.md data/study-package/WIKCIONARIO-SOURCE.md
+          cp evidence/ciempiess-light-frequency.jsonl data/study-package/mexico-radio-frequency.jsonl
+          cp evidence/ciempiess-light-frequency.manifest.json data/study-package/mexico-radio-frequency-manifest.json
+          cp evidence/CIEMPIESS-SOURCE.md data/study-package/CIEMPIESS-SOURCE.md
           printf '{"format_version":1,"source":"mexilex","source_git_commit":"%s","lexical_language":"es-MX","definition_language":"en","export_kind":"study-entries","default_excludes_pure_inflections":true}\n' "$GITHUB_SHA" > data/study-package/manifest.json
           (
             cd data/study-package
-            sha256sum study.jsonl mexico-labeled.jsonl mexico-dialogue-frequency.jsonl mexico-dialogue-frequency-manifest.json wikcionario-mexico.jsonl wikcionario-mexico-manifest.json manifest.json > SHA256SUMS
+            sha256sum study.jsonl mexico-labeled.jsonl mexico-dialogue-frequency.jsonl mexico-dialogue-frequency-manifest.json wikcionario-mexico.jsonl wikcionario-mexico-manifest.json mexico-radio-frequency.jsonl mexico-radio-frequency-manifest.json manifest.json > SHA256SUMS
           )
           test "$(wc -l < data/study-package/study.jsonl)" -gt 100000
           test "$(wc -l < data/study-package/mexico-labeled.jsonl)" -gt 1000
           test "$(wc -l < data/study-package/mexico-dialogue-frequency.jsonl)" -gt 10000
           test "$(wc -l < data/study-package/wikcionario-mexico.jsonl)" -gt 1500
+          test "$(wc -l < data/study-package/mexico-radio-frequency.jsonl)" -eq 6250
+          node --input-type=module <<'NODE'
+          import assert from "node:assert/strict";
+          import fs from "node:fs";
+          import crypto from "node:crypto";
+          const root="data/study-package/";
+          const m=JSON.parse(fs.readFileSync(root+"mexico-radio-frequency-manifest.json","utf8"));
+          const data=fs.readFileSync(root+"mexico-radio-frequency.jsonl");
+          assert.equal(m.utterances,16663);
+          assert.equal(m.token_total,167118);
+          assert.equal(m.published_surface_tokens,6250);
+          assert.equal(m.output_sha256,crypto.createHash("sha256").update(data).digest("hex"));
+          assert.equal(m.license,"CC BY-SA 4.0; see CIEMPIESS-SOURCE.md");
+          NODE
       - name: Upload study-export package for the external trainer
         uses: actions/upload-artifact@v4
         with:
