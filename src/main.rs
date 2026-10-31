@@ -56,10 +56,8 @@ fn run() -> Result<()> {
             if args.next().is_some() {
                 return Err(usage().into());
             }
-            let connection = Connection::open_with_flags(
-                db,
-                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-            )?;
+            let connection =
+                Connection::open_with_flags(db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
             let counts = corpus::export_corpus(&connection, Path::new(&directory))?;
             println!("{counts:#?}");
         }

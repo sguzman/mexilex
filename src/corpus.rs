@@ -144,9 +144,13 @@ mod tests {
             Cursor::new(include_str!("../tests/fixtures/sample.jsonl")),
         )
         .unwrap();
-        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
         let first = std::env::temp_dir().join(format!("mexilex-{}-{unique}-1", std::process::id()));
-        let second = std::env::temp_dir().join(format!("mexilex-{}-{unique}-2", std::process::id()));
+        let second =
+            std::env::temp_dir().join(format!("mexilex-{}-{unique}-2", std::process::id()));
         let stats = export_corpus(&db, &first).unwrap();
         assert_eq!(stats.entries, 2);
         assert_eq!(stats.senses, 3);
@@ -177,7 +181,10 @@ mod tests {
             }
         }
         assert_eq!(parsed.len(), 2);
-        let banqueta = parsed.iter().find(|value| value["word"] == "banqueta").unwrap();
+        let banqueta = parsed
+            .iter()
+            .find(|value| value["word"] == "banqueta")
+            .unwrap();
         assert_eq!(banqueta["senses"][0]["mexican_usage"], true);
         assert_eq!(banqueta["senses"][1]["mexican_usage"], false);
         fs::remove_dir_all(first).unwrap();
