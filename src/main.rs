@@ -136,9 +136,13 @@ fn run() -> Result<()> {
             let source = args.next().ok_or_else(usage)?;
             let corpus = args.next().ok_or_else(usage)?;
             let destination = args.next().ok_or_else(usage)?;
-            if args.next().is_some() { return Err(usage().into()); }
+            if args.next().is_some() {
+                return Err(usage().into());
+            }
             let counts = wikcionario::import_file(
-                Path::new(&source), Path::new(&corpus), Path::new(&destination)
+                Path::new(&source),
+                Path::new(&corpus),
+                Path::new(&destination),
             )?;
             println!("{counts:#?}");
         }

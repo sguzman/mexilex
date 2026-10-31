@@ -45,25 +45,44 @@ pub(crate) fn parse_records<R: BufRead, W: Write>(
         if record.get("lang_code").and_then(Value::as_str) != Some("es") {
             return Err(format!("non-Spanish source record at line {}", offset + 1).into());
         }
-        let word = record.get("word").and_then(Value::as_str).ok_or("missing spelling")?;
-        let pos = record.get("pos").and_then(Value::as_str).ok_or("missing POS")?;
+        let word = record
+            .get("word")
+            .and_then(Value::as_str)
+            .ok_or("missing spelling")?;
+        let pos = record
+            .get("pos")
+            .and_then(Value::as_str)
+            .ok_or("missing POS")?;
         if word.trim().is_empty() || pos.trim().is_empty() {
             return Err("empty spelling or POS in Spanish Wiktionary feed".into());
         }
-        let senses = record.get("senses").and_then(Value::as_array).ok_or("missing senses")?;
-        let mexican = senses.iter().filter(|sense| {
-            sense.get("tags").and_then(Value::as_array).is_some_and(|tags| {
-                tags.iter().any(|tag| tag.as_str() == Some("Mexico"))
+        let senses = record
+            .get("senses")
+            .and_then(Value::as_array)
+            .ok_or("missing senses")?;
+        let mexican = senses
+            .iter()
+            .filter(|sense| {
+                sense
+                    .get("tags")
+                    .and_then(Value::as_array)
+                    .is_some_and(|tags| tags.iter().any(|tag| tag.as_str() == Some("Mexico")))
             })
-        }).count();
+            .count();
         if mexican == 0 {
-            return Err(format!("record without explicit Mexico tag at source line {}", offset + 1).into());
+            return Err(format!(
+                "record without explicit Mexico tag at source line {}",
+                offset + 1
+            )
+            .into());
         }
         source_records += 1;
         source_senses += mexican;
         *rows.entry((word.to_owned(), pos.to_owned())).or_default() += mexican;
     }
-    if rows.is_empty() { return Err("empty Mexico-tagged Spanish Wiktionary feed".into()); }
+    if rows.is_empty() {
+        return Err("empty Mexico-tagged Spanish Wiktionary feed".into());
+    }
     let mut spellings = HashSet::new();
     let mut matched_spellings = HashSet::new();
     let mut matched_word_pos = 0;
@@ -93,15 +112,22 @@ pub(crate) fn import_file(source: &Path, corpus: &Path, destination: &Path) -> R
         return Err("refusing to overwrite existing Wikcionario evidence".into());
     }
     let headwords = crate::evidence::known_headwords(corpus)?;
-    if headwords.is_empty() { return Err("empty normalized English-Wiktionary headword corpus".into()); }
+    if headwords.is_empty() {
+        return Err("empty normalized English-Wiktionary headword corpus".into());
+    }
     if let Some(parent) = destination.parent() {
-        if !parent.as_os_str().is_empty() { fs::create_dir_all(parent)?; }
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
     }
     let result = (|| -> Result<SourceStats> {
         let bytes = fs::read(source)?;
         let sha256 = format!("{:x}", Sha256::digest(&bytes));
         let mut output = BufWriter::new(
-            OpenOptions::new().create_new(true).write(true).open(destination)?
+            OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(destination)?,
         );
         let stats = parse_records(BufReader::new(bytes.as_slice()), &mut output, &headwords)?;
         output.flush()?;
@@ -122,8 +148,10 @@ pub(crate) fn import_file(source: &Path, corpus: &Path, destination: &Path) -> R
             "matched_spellings": stats.matched_spellings,
             "matching": "case-insensitive exact spelling of a non-inflection-only headword in English Wiktionary; never a sense-level match"
         });
-        fs::write(destination.with_extension("manifest.json"),
-            format!("{}\n", serde_json::to_string_pretty(&manifest)?))?;
+        fs::write(
+            destination.with_extension("manifest.json"),
+            format!("{}\n", serde_json::to_string_pretty(&manifest)?),
+        )?;
         Ok(stats)
     })();
     if result.is_err() {
@@ -154,8 +182,11 @@ mod tests {
         assert_eq!(stats.distinct_word_pos, 3);
         assert_eq!(stats.matched_word_pos, 1);
         assert_eq!(stats.matched_spellings, 1);
-        let rows: Vec<Value> = String::from_utf8(out).unwrap().lines()
-            .map(|line| serde_json::from_str(line).unwrap()).collect();
+        let rows: Vec<Value> = String::from_utf8(out)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
         assert_eq!(rows[0], json!(["banqueta", "noun", 1, true]));
         assert_eq!(rows[1], json!(["chamba", "noun", 1, false]));
         assert_eq!(rows[2], json!(["chamba", "verb", 1, false]));
@@ -166,7 +197,8 @@ mod tests {
         let headwords = HashSet::new();
         let bad = r#"{"lang_code":"es","word":"banqueta","pos":"noun","senses":[{"tags":["New-Mexico"]}]}"#;
         assert!(parse_records(Cursor::new(bad), Vec::new(), &headwords).is_err());
-        let other_language = r#"{"lang_code":"en","word":"banqueta","pos":"noun","senses":[{"tags":["Mexico"]}]}"#;
+        let other_language =
+            r#"{"lang_code":"en","word":"banqueta","pos":"noun","senses":[{"tags":["Mexico"]}]}"#;
         assert!(parse_records(Cursor::new(other_language), Vec::new(), &headwords).is_err());
     }
 }
