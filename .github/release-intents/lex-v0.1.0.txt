@@ -1,0 +1,16 @@
+Mexilex lexical data snapshot lex-v0.1.0
+
+Publication intent: create the first permanent versioned data release from this
+main-branch Git commit. This is the single-use release trigger; it is NOT a
+generic auto-release for future commits.
+
+Includes:
+- A generated SQLite database reconstructed from the 813,928-entry Git corpus
+- Stateless es-MX vocabulary records defined in English
+- Explicit Mexico-labeled meanings as a separate study subset
+- Mexican film-dialogue frequency sidecar with independent GPL-2.0 terms
+- Source revision, attribution, licenses and SHA-256 checksums
+
+Build and validation are performed by .github/workflows/release.yml. If any
+test, source check, archive check or upload fails, do not claim publication.
+No SRS reviews, personal progress, or learner data belong in these archives.
