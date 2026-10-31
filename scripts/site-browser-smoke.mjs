@@ -179,6 +179,7 @@ try {
     if (!flag || flag.getBoundingClientRect().width === 0 || !explore) {
       throw Error("Narrow mobile header or dictionary controls are missing");
     }
+    if (viewport > 322) throw Error("Narrow device viewport expanded beyond 320px: " + viewport);
     if (width > viewport + 2) throw Error("Narrow phone horizontal overflow: " + width + " > " + viewport);
     return {viewport, pageWidth: width};
   })()`);

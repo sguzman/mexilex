@@ -21,3 +21,12 @@
  .mexico-hero-banner-copy strong{font-size:11px;letter-spacing:.08em}
  .mexico-hero-banner-copy span{font-size:12px}
 }
+
+/* Preserve the actual 320px layout viewport on compact phones. The source
+   link remains in the page footer when removed from the narrow header. */
+@media(max-width:380px){
+ .topbar{gap:7px}
+ .brand{font-size:20px;gap:7px}
+ .topbar nav a[href^="https://github.com/"]{display:none}
+ .topbar nav{gap:6px}
+}

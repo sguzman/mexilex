@@ -56,3 +56,7 @@ The site **never** turns frequency evidence into a Mexico-specific definition la
 ## Browse commonly attested Mexican film-dialogue words
 
 The **Common in Mexican film dialogue** button loads a small `dialogue.json` list of up to 500 distinct word spellings ranked by observed Mexico-corpus relative frequency. Both the browse list and the underlying search indexes come from the separately licensed ACTIV-ES v0.2 frequency sidecar and the Git-tracked Wiktionary lexicon. This discovery mode does **not** assert that these words have uniquely Mexican meanings. The original English definitions, sense-level regional tags, source provenance, and license separation remain intact.
+
+## Narrow-phone layout regression (320 CSS pixels)
+
+The live Chromium browser QA also emulates a 320-pixel phone and fails if the actual layout viewport grows wider than the requested device width. The narrow header conserves space by hiding the top navigation's duplicate GitHub Source link; the project remains linked in the footer. This is a layout automation check, not a claim to have tested a physical phone.
