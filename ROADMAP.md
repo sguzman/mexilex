@@ -13,13 +13,13 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | 🟡 Mexican usage evidence enrichment | 15% | 60% | 2,115 English-Wiktionary Mexico-tagged senses, 12,528 headwords attested in Mexican film dialogue and **1,235 independently Mexico-tagged Spanish-Wiktionary spellings** matched to English-defined words, all with separate provenance and licensing; **broader representative written/spoken Mexican sources remain open** |
 | 🟡 Public website deployment | 10% | 99% | Public GitHub Pages verified in user's Firefox; HTTPS, index and source shard checks, plus live Chromium desktop/mobile browser regression tests now run automatically after deployment; **physical phone QA remains** |
 
-**Weighted progress: approximately 94% (previous rounded 91%; +2.25 percentage points on the unrounded weighted model, +3 after rounding).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 94% (unchanged in this distribution-only round; the earlier 91% → 94% increase reflects independently sourced Mexican regional evidence).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
 1. **Website QA:** real Chromium checks pass for desktop, 390px mobile, and 320px narrow layouts; full HTTPS lookups, discovery buttons, and light/dark controls are tested automatically on every deployment. A physical phone QA pass remains outstanding.
 2. **Regional evidence:** ACTIV-ES Mexican film-dialogue frequencies and Spanish Wiktionary's independently Mexico-tagged spellings are now both normalized and versioned in Git. Maintain separate evidence meanings and find a more representative Mexican written/spoken source with clear redistribution rights.
 3. **Trainer contract stability:** `compare-study` handles changed definitions/annotations/forms/senses, and a read-only real upstream review plus checksum-and-budget-gated refresh are implemented. The first live review found identical upstream bytes, so a genuine new-version migration remains untested; never auto-migrate private review histories.
-4. **Permanent distribution:** first public [lex-v0.1.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) published and independently downloaded by CI; archive checksums, SQLite integrity, 813,928 dictionary entries, 124,444 study records and separate frequency data all passed consumer verification.
+4. **Permanent distribution:** public [lex-v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0) and [lex-v0.2.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0) now published, the latter including independently licensed Wikcionario Mexican-word records. Both have verified public checksums, full-source archives and stateless exports; v0.2.0 passed post-publication download and evidence-count checks.
 
 Do not add additional languages, user accounts, SRS algorithms, or unrelated ontology to Mexilex.

@@ -6,6 +6,12 @@ Mexilex stores its normalized Spanish vocabulary in Git under `corpus/`. The SQL
 
 **[Mexilex lexical snapshot v0.1.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.1.0)** was successfully published with `mexilex-sqlite-v0.1.0.tar.gz`, `mexilex-study-v0.1.0.tar.gz`, and `SHA256SUMS`. The successful packaging/publishing workflow verified code, source reconstruction, data exports, archive contents, and checksums. This is a public GitHub Release, not a 14-day CI artifact. The associated tag pins the generated snapshot's Git commit.
 
+## Verified lex-v0.2.0 publication
+
+**[Mexilex lexical snapshot v0.2.0](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0)** was published on 2026-10-31 from commit `893df1657cb3c912680817656bb22204a11cb2f8`. The study archive contains independent Wikcionario Mexico-word evidence, its source manifest and CC BY-SA/GFDL attribution alongside GPL-2.0 film-frequency records. It never binds Spanish Wiktionary senses to specific English glosses; the export contains no learner review history.
+
+The [successful publication workflow](https://github.com/sguzman/mexilex/actions/runs/41251273959) downloaded its actual public assets, checked SHA-256 hashes, extracted the study archive and verified 1,946 Wikcionario word/POS rows, 2,304 Mexico-tagged senses, 1,235 matched headword spellings and the `banqueta` evidence.
+
 ## Build and publication
 
 Open **Actions → Package versioned lexical release → Run workflow**. Supply a version such as `0.1.0`.
@@ -30,8 +36,8 @@ The study archive additionally contains `mexico-dialogue-frequency.jsonl`, `mexi
 
 A GitHub Actions [consumer check](../.github/workflows/verify-release.yml) downloaded all three public `lex-v0.1.0` assets **from GitHub Releases**, independently verified the SHA-256 file, extracted both archives, checked SQLite integrity and lexical/sense counts, and validated the 124,444-entry study export and 12,528-record independent Mexican dialogue-frequency sidecar. Its successful run is [recorded in Actions](https://github.com/sguzman/mexilex/actions/runs/41247735698). This is more than a build-time artifact integrity check: it demonstrates that consumers can download and inspect the actual public release.
 
-## Future release metadata: Wikcionario evidence
+## Independently licensed Wikcionario evidence
 
-After `lex-v0.1.0`, the release packaging pipeline now includes a separate `wikcionario-mexico.jsonl` word-evidence sidecar, a source-manifest checksum and `WIKCIONARIO-SOURCE.md` attribution. This supplementary source uses CC BY-SA/GFDL terms and is independent of both English Wiktionary glosses and GPL-2.0 film-frequency data. **The already-published v0.1.0 assets are immutable and do not include the new sidecar.** Publish it only with a new explicitly versioned release.
+The published `lex-v0.2.0` study archive includes `wikcionario-mexico.jsonl`, `wikcionario-mexico-manifest.json` and `WIKCIONARIO-SOURCE.md`. This source uses CC BY-SA/GFDL terms, independent of English Wiktionary glosses and GPL-2.0 film-frequency data. **The original v0.1.0 assets remain immutable and lack this sidecar.**
 
 The [v0.2-ready release preview workflow](https://github.com/sguzman/mexilex/actions/runs/41250676401) passed after adding the Spanish Wiktionary regional evidence sidecar and its attribution. This validates packaging only; **no new public GitHub Release has been created**, and `lex-v0.1.0` remains untouched.
