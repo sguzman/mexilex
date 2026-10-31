@@ -10,15 +10,15 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | ✅ Version the processed vocabulary in Git | 15% | 100% | 4,096 normalized JSONL shards committed on `main`; full snapshot reconstructs SQLite without redownloading upstream |
 | 🟡 Read-only dictionary presentation | 15% | 92% | System/light/dark site, source attribution, indexed lookup, Mexico discovery, split forms; desktop/mobile Chromium QA of generated assets passed with mocked network, **real deployed fetch and mobile-device QA remain** |
 | 🟡 Portable trainer exports | 15% | 98% | 124,444 headword-style entries; downloadable checksummed packages; full same-version reconciliation passed; **validate real cross-version migrations and publish a permanent release before enabling trainer synchronization** |
-| 🟡 Mexican usage evidence enrichment | 15% | 15% | 2,115 source-verified Mexico-labeled senses and [licensing-aware source audit](docs/mexican-source-audit.md); **no unverified commercial/bulk dictionary import; source selection and frequency evidence are still open** |
+| 🟡 Mexican usage evidence enrichment | 15% | 45% | 2,115 source-verified Mexico-specific senses remain; 12,528 attested words from independently licensed Mexican film dialogue are now versioned in Git, with evidence/provenance separate from semantic tags; **additional representative Mexican sources and corpus bias/coverage remain open** |
 | 🟡 Public website deployment | 10% | 95% | GitHub Pages deployed, live HTTPS smoke test passed for HTML, index and real pinned lexical shard; **user Firefox/phone QA remains** |
 
-**Weighted progress: approximately 85% (+9 percentage points from the previous 76% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 89% (+4 percentage points from the previous 85% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
 1. **Website QA:** the public Pages deployment succeeded; verify the actual URL in Firefox on desktop and mobile, including accents, `ñ`, Mexico filters and live raw-entry fetching.
-2. **Regional evidence:** identify a redistributable Mexico-specific frequency/usage dataset; keep frequency data and dictionary regional meanings separate and preserve provenance.
+2. **Regional evidence:** the first licensed ACTIV-ES Mexican film-dialogue frequency sidecar is imported; pursue broader, representative Mexican written/spoken sources and clearly distinguish frequency from region-specific meanings.
 3. **Trainer contract stability:** `compare-study` now rejects ambiguous, missing, or changed identities and passed a 124,444-entry self-comparison; validate a genuinely different upstream snapshot and consumer-specific migration behavior before synchronizing private reviews.
 4. **Permanent distribution:** the opt-in, versioned packaging workflow passes a full preview build with checksums and license notices. Publish a durable release explicitly when the contract is ready, and verify the published downloads.
 

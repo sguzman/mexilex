@@ -93,3 +93,7 @@ The [public dictionary website](https://sguzman.github.io/mexilex/) is deployed 
 ## Durable lexical releases
 
 The [manual release workflow](.github/workflows/release.yml) packages versioned SQLite and study exports from the tracked vocabulary with checksums, source manifests, and license notices. Publication is explicit, not automatic. See [release documentation](docs/releases.md).
+
+## Mexican spoken-language evidence
+
+A separate [GPL-2.0 ACTIV-ES v0.2 sidecar](evidence/README.md), derived from Mexican/Spanish/Argentine film-dialogue word frequencies, now records 12,528 Mexico-attested Spanish headword spellings. Use the dictionary's **Rank by frequency in Mexican film dialogue** option or inspect the source-specific rates in entry details. This frequency signal does **not** turn ordinary Spanish meanings into Mexico-exclusive ones, and no original film dialogue is stored. This evidence retains its own license, independent of Wiktionary content and MIT code.
