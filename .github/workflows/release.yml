@@ -46,6 +46,7 @@ jobs:
           cargo run --release -- export-study corpus data/study.jsonl
           cargo run --release -- export-study corpus data/mexico-labeled.jsonl --mexico-only
           test -s data/mexilex.sqlite
+          test -s evidence/activ-es-v02.manifest.json
           test "$(wc -l < data/study.jsonl)" -gt 100000
           test "$(wc -l < data/mexico-labeled.jsonl)" -gt 1000
       - name: Package source metadata, licensing, and data
@@ -54,6 +55,9 @@ jobs:
           cp data/mexilex.sqlite data/release/sqlite/mexilex.sqlite
           cp data/study.jsonl data/release/study/study.jsonl
           cp data/mexico-labeled.jsonl data/release/study/mexico-labeled.jsonl
+          cp evidence/activ-es-v02.jsonl data/release/study/mexico-dialogue-frequency.jsonl
+          cp evidence/activ-es-v02.manifest.json data/release/study/mexico-dialogue-frequency-manifest.json
+          cp evidence/ACTIV-ES-LICENSE data/release/study/ACTIV-ES-LICENSE
           for folder in sqlite study; do
             cp CORPUS-LICENSE.md "data/release/$folder/CORPUS-LICENSE.md"
             cp corpus/manifest.json "data/release/$folder/source-manifest.json"
@@ -73,6 +77,8 @@ jobs:
             tar -tzf "mexilex-sqlite-v$VERSION.tar.gz" | grep -q '/mexilex.sqlite'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/study.jsonl'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/mexico-labeled.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/mexico-dialogue-frequency.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/ACTIV-ES-LICENSE'
           )
       - name: Upload downloadable preview
         uses: actions/upload-artifact@v4
@@ -90,7 +96,8 @@ jobs:
           Source commit: $GITHUB_SHA.
 
           The SQLite archive contains a generated database; the study archive
-          contains stateless headword-oriented vocabulary and Mexico-labeled entries.
+          contains stateless headword-oriented vocabulary, Mexico-labeled entries,
+          and a separate GPL-2.0 ACTIV-ES Mexican film-dialogue frequency sidecar.
           See CORPUS-LICENSE.md in each archive for upstream licensing.
           Do not erase trainer review history when changing dictionary snapshots;
           use the compare-study reconciliation command first.

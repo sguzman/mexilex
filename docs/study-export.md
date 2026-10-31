@@ -76,3 +76,7 @@ The comparison emits a **non-destructive, one-row-per-previous-entry JSONL repor
 For matched entries, individual old senses are tagged `same_definition`, `changed_definition`, or `missing` based on exact source sense ID and definition. There is no fuzzy semantic matching and no automatic deletion of review history. Both inputs must be compatible version-one Mexilex study exports in the `es-MX` → `en` contract. The command refuses to overwrite an existing reconciliation report.
 
 The build pipeline also compares a full study export to itself, verifying that the complete current snapshot yields exact matches only. Real-world cross-version testing remains a separate acceptance criterion before trainer synchronization is enabled.
+
+## Mexican film-dialogue frequency for study prioritization
+
+CI and versioned study packages include a **separate** `mexico-dialogue-frequency.jsonl` sidecar with 12,528 Mexico-attested non-form-only headword spellings. The same package includes `mexico-dialogue-frequency-manifest.json` and GPL-2.0 license text. The trainer may use these rates to *prioritize study candidates*, but must not reinterpret a film-dialogue frequency as a `mexican_usage` sense annotation or overwrite personal progress. The stable version-one `study.jsonl` schema is unchanged.

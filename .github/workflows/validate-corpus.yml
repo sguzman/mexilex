@@ -51,13 +51,17 @@ jobs:
           cp data/study.jsonl data/study-package/study.jsonl
           cp data/mexican-study.jsonl data/study-package/mexico-labeled.jsonl
           cp CORPUS-LICENSE.md data/study-package/CORPUS-LICENSE.md
+          cp evidence/activ-es-v02.jsonl data/study-package/mexico-dialogue-frequency.jsonl
+          cp evidence/activ-es-v02.manifest.json data/study-package/mexico-dialogue-frequency-manifest.json
+          cp evidence/ACTIV-ES-LICENSE data/study-package/ACTIV-ES-LICENSE
           printf '{"format_version":1,"source":"mexilex","source_git_commit":"%s","lexical_language":"es-MX","definition_language":"en","export_kind":"study-entries","default_excludes_pure_inflections":true}\n' "$GITHUB_SHA" > data/study-package/manifest.json
           (
             cd data/study-package
-            sha256sum study.jsonl mexico-labeled.jsonl manifest.json > SHA256SUMS
+            sha256sum study.jsonl mexico-labeled.jsonl mexico-dialogue-frequency.jsonl mexico-dialogue-frequency-manifest.json manifest.json > SHA256SUMS
           )
           test "$(wc -l < data/study-package/study.jsonl)" -gt 100000
           test "$(wc -l < data/study-package/mexico-labeled.jsonl)" -gt 1000
+          test "$(wc -l < data/study-package/mexico-dialogue-frequency.jsonl)" -gt 10000
       - name: Upload study-export package for the external trainer
         uses: actions/upload-artifact@v4
         with:
