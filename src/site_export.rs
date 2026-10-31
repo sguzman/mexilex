@@ -42,7 +42,7 @@ fn normalize(value: &str) -> String {
             'í' | 'ì' | 'î' | 'ï' => 'i',
             'ó' | 'ò' | 'ô' | 'ö' => 'o',
             'ú' | 'ù' | 'û' | 'ü' => 'u',
-            'ñ' => 'n',
+            'ñ' => 'ñ',
             other => other,
         })
         .collect()
@@ -324,10 +324,10 @@ mod tests {
 
     #[test]
     fn normalizes_search_prefixes_without_erasing_source_spelling() {
-        assert_eq!(normalize("Niño"), "nino");
+        assert_eq!(normalize("Niño"), "niño");
         assert_eq!(normalize("ÁRBOL"), "arbol");
         assert_eq!(bucket("áx"), Some("_x".to_string()));
         assert_eq!(bucket(&normalize("árbol")), Some("ar".to_string()));
-        assert_eq!(bucket(&normalize("ñame")), Some("na".to_string()));
+        assert_eq!(bucket(&normalize("ñame")), Some("_a".to_string()));
     }
 }

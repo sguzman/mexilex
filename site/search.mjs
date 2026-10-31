@@ -1,6 +1,6 @@
 // Locale-aware search helpers, intentionally dependency-free.
 export function fold(value) {
-  return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+  return String(value).normalize("NFD").replace(/n\u0303/g, "ñ").replace(/N\u0303/g, "Ñ").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
 }
 export function bucketOf(query) {
   const chars = Array.from(fold(query));

@@ -4,9 +4,11 @@ import { fold, bucketOf, resultMatches } from "../site/search.mjs";
 
 test("accent-insensitive Spanish lookup with exact source spellings unchanged", () => {
   assert.equal(fold("ÁRBOL"), "arbol");
-  assert.equal(fold("NIÑO"), "nino");
+  assert.equal(fold("NIÑO"), "niño");
+  assert.equal(fold("niño"), "niño");
+  assert.notEqual(fold("niño"), fold("nino"));
   assert.equal(bucketOf("Árbol"), "ar");
-  assert.equal(bucketOf("ñame"), "na");
+  assert.equal(bucketOf("ñame"), "_a");
   assert.equal(bucketOf("a"), null);
   assert.equal(bucketOf(""), null);
 });
