@@ -16,4 +16,4 @@ jobs:
       - run: cargo test --all-targets
       - run: node --check scripts/guard-upstream-refresh.mjs
       - run: node --check scripts/summarize-upstream-review.mjs
-      - run: node --test tests/upstream-refresh.test.mjs
+      - run: node --test tests/upstream-refresh.test.mjs tests/upstream-summary.test.mjs
