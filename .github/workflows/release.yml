@@ -7,6 +7,7 @@ on:
       - ".github/workflows/release.yml"
       - ".github/release-intents/lex-v0.1.0.txt"
       - ".github/release-intents/lex-v0.2.0.txt"
+      - ".github/release-intents/lex-v0.3.0.txt"
   workflow_dispatch:
     inputs:
       version:
@@ -31,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      VERSION: "${{ inputs.version || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.2.0' && '0.2.0') || '0.1.0' }}"
+      VERSION: "${{ inputs.version || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.3.0' && '0.3.0') || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.2.0' && '0.2.0') || '0.1.0' }}"
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +69,9 @@ jobs:
           cp evidence/eswiktionary-mexico.jsonl data/release/study/wikcionario-mexico.jsonl
           cp evidence/eswiktionary-mexico.manifest.json data/release/study/wikcionario-mexico-manifest.json
           cp evidence/WIKCIONARIO-SOURCE.md data/release/study/WIKCIONARIO-SOURCE.md
+          cp evidence/ciempiess-light-frequency.jsonl data/release/study/mexico-radio-frequency.jsonl
+          cp evidence/ciempiess-light-frequency.manifest.json data/release/study/mexico-radio-frequency-manifest.json
+          cp evidence/CIEMPIESS-SOURCE.md data/release/study/CIEMPIESS-SOURCE.md
           for folder in sqlite study; do
             cp CORPUS-LICENSE.md "data/release/$folder/CORPUS-LICENSE.md"
             cp corpus/manifest.json "data/release/$folder/source-manifest.json"
@@ -91,6 +95,8 @@ jobs:
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/ACTIV-ES-LICENSE'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/wikcionario-mexico.jsonl'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/WIKCIONARIO-SOURCE.md'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/mexico-radio-frequency.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/CIEMPIESS-SOURCE.md'
           )
       - name: Upload downloadable preview
         uses: actions/upload-artifact@v4
@@ -100,7 +106,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Publish permanent release assets
-        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.event.head_commit.message == 'release: publish lex-v0.1.0' || github.event.head_commit.message == 'release: publish lex-v0.2.0')) }}"
+        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.event.head_commit.message == 'release: publish lex-v0.1.0' || github.event.head_commit.message == 'release: publish lex-v0.2.0' || github.event.head_commit.message == 'release: publish lex-v0.3.0')) }}"
         run: |
           cat > data/release-notes.md <<EOF
           Source: English Wiktionary Spanish via Kaikki/Wiktextract.
@@ -111,8 +117,10 @@ jobs:
           contains stateless headword-oriented vocabulary, Mexico-labeled entries,
           a separate GPL-2.0 ACTIV-ES Mexican film-dialogue frequency sidecar,
           and independently tagged Spanish Wiktionary (Wikcionario) Mexico-word
-          evidence licensed under CC BY-SA/GFDL. Neither secondary source
-          changes the English-Wiktionary sense meanings or Mexican sense labels.
+          evidence licensed under CC BY-SA/GFDL, plus independently licensed
+          CC BY-SA 4.0 aggregate Mexican radio-conversation frequency evidence
+          derived from CIEMPIESS LIGHT. These sources do not change the
+          English-Wiktionary senses or claim regional semantic exclusivity.
           See CORPUS-LICENSE.md in each archive for upstream licensing.
           Do not erase trainer review history when changing dictionary snapshots;
           use the compare-study reconciliation command first.
@@ -125,7 +133,7 @@ jobs:
             --title "Mexilex lexical snapshot v$VERSION" \
             --notes-file data/release-notes.md
       - name: Verify public release assets after publication
-        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.event.head_commit.message == 'release: publish lex-v0.1.0' || github.event.head_commit.message == 'release: publish lex-v0.2.0')) }}"
+        if: "${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.event.head_commit.message == 'release: publish lex-v0.1.0' || github.event.head_commit.message == 'release: publish lex-v0.2.0' || github.event.head_commit.message == 'release: publish lex-v0.3.0')) }}"
         run: |
           mkdir -p data/published-release
           gh release download "lex-v$VERSION" --repo "$GITHUB_REPOSITORY" --dir data/published-release
@@ -135,6 +143,8 @@ jobs:
             test -s "mexilex-sqlite-v$VERSION.tar.gz"
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q 'wikcionario-mexico.jsonl'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q 'WIKCIONARIO-SOURCE.md'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q 'mexico-radio-frequency.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q 'CIEMPIESS-SOURCE.md'
           )
           mkdir -p data/published-study
           tar -xzf "data/published-release/mexilex-study-v$VERSION.tar.gz" -C data/published-study
@@ -150,6 +160,14 @@ jobs:
           assert.equal(regional.source_senses, 2304);
           assert.equal(regional.matched_spellings, 1235);
           assert.equal(regional.distinct_word_pos, 1946);
+          const radio = JSON.parse(fs.readFileSync(folder + "mexico-radio-frequency-manifest.json", "utf8"));
+          assert.equal(radio.utterances, 16663);
+          assert.equal(radio.token_total, 167118);
+          assert.equal(radio.published_surface_tokens, 6250);
+          assert.equal(radio.license, "CC BY-SA 4.0; see CIEMPIESS-SOURCE.md");
+          const speech = fs.readFileSync(folder + "mexico-radio-frequency.jsonl", "utf8").trimEnd().split("\\n").map(JSON.parse);
+          assert.equal(speech.length, 6250);
+          assert.deepEqual(speech.find(row => row[0] === "casa"), ["casa", 43, 42]);
           const rows = fs.readFileSync(folder + 'wikcionario-mexico.jsonl', 'utf8').trimEnd().split('\n').map(JSON.parse);
           assert.ok(rows.every(row => Array.isArray(row) && row.length === 4 && typeof row[3] === 'boolean'));
           assert.ok(rows.some(row => row[0] === 'banqueta' && row[3] === true));
