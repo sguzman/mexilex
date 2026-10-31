@@ -17,12 +17,16 @@ pub(crate) struct Loaded {
 }
 
 fn required<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
-    value.get(key).and_then(Value::as_str)
+    value
+        .get(key)
+        .and_then(Value::as_str)
         .ok_or_else(|| format!("missing string field {key}").into())
 }
 
 fn json_field(value: &Value, field: &str) -> Result<String> {
-    let data = value.get(field).ok_or_else(|| format!("missing field {field}"))?;
+    let data = value
+        .get(field)
+        .ok_or_else(|| format!("missing field {field}"))?;
     if !data.is_array() {
         return Err(format!("{field} must be an array").into());
     }
@@ -30,7 +34,9 @@ fn json_field(value: &Value, field: &str) -> Result<String> {
 }
 
 fn exact_count(manifest: &Value, key: &str, count: usize) -> Result<()> {
-    let expected = manifest.get(key).and_then(Value::as_u64)
+    let expected = manifest
+        .get(key)
+        .and_then(Value::as_u64)
         .ok_or_else(|| format!("manifest missing numeric {key}"))?;
     if expected != count as u64 {
         return Err(format!("{key} mismatch: manifest={expected}, actual={count}").into());
@@ -42,7 +48,9 @@ fn shards(directory: &Path) -> Result<Vec<PathBuf>> {
     let mut paths = Vec::new();
     for item in fs::read_dir(directory)? {
         let item = item?;
-        if !item.file_type()?.is_dir() { continue; }
+        if !item.file_type()?.is_dir() {
+            continue;
+        }
         let prefix = item.file_name().to_string_lossy().into_owned();
         if prefix.len() != 2 || !prefix.bytes().all(|c| c.is_ascii_hexdigit()) {
             return Err(format!("unexpected directory in corpus: {prefix}").into());
@@ -53,8 +61,10 @@ fn shards(directory: &Path) -> Result<Vec<PathBuf>> {
                 return Err(format!("unexpected non-file: {}", candidate.path().display()).into());
             }
             let name = candidate.file_name().to_string_lossy().into_owned();
-            if name.len() != 7 || !name.ends_with(".jsonl") ||
-                !name.as_bytes()[0].is_ascii_hexdigit() {
+            if name.len() != 7
+                || !name.ends_with(".jsonl")
+                || !name.as_bytes()[0].is_ascii_hexdigit()
+            {
                 return Err(format!("unexpected shard name: {name}").into());
             }
             paths.push(candidate.path());
@@ -70,7 +80,8 @@ pub(crate) fn load_corpus(db: &mut Connection, directory: &Path) -> Result<Loade
         return Err("unsupported corpus format version".into());
     }
     if required(&manifest, "lexical_language")? != "es-MX"
-        || required(&manifest, "definition_language")? != "en" {
+        || required(&manifest, "definition_language")? != "en"
+    {
         return Err("unexpected language metadata in corpus".into());
     }
     let paths = shards(directory)?;
@@ -84,7 +95,10 @@ pub(crate) fn load_corpus(db: &mut Connection, directory: &Path) -> Result<Loade
         ("definition_language", "en"),
         ("lexical_language", "es-MX"),
     ] {
-        transaction.execute("INSERT INTO metadata (key,value) VALUES (?1,?2)", params![key, value])?;
+        transaction.execute(
+            "INSERT INTO metadata (key,value) VALUES (?1,?2)",
+            params![key, value],
+        )?;
     }
     let mut stats = Loaded::default();
     {
@@ -103,44 +117,70 @@ pub(crate) fn load_corpus(db: &mut Connection, directory: &Path) -> Result<Loade
             let reader = BufReader::new(file);
             for (line_index, line) in reader.lines().enumerate() {
                 let line = line?;
-                let record: Value = serde_json::from_str(&line).map_err(|err|
-                    format!("{}:{}: {err}", path.display(), line_index + 1)
-                )?;
+                let record: Value = serde_json::from_str(&line)
+                    .map_err(|err| format!("{}:{}: {err}", path.display(), line_index + 1))?;
                 let key = required(&record, "id")?;
                 let word = required(&record, "word")?;
                 let pos = required(&record, "part_of_speech")?;
                 if required(&record, "language")? != "es-MX"
-                    || required(&record, "definition_language")? != "en" {
+                    || required(&record, "definition_language")? != "en"
+                {
                     return Err(format!("{}: language mismatch", path.display()).into());
                 }
                 let key_prefix = &key.get(..3).ok_or("invalid entry key")?;
-                let stem = path.file_stem().ok_or("invalid shard filename")?.to_string_lossy();
-                let parent = path.parent().ok_or("invalid shard path")?
-                    .file_name().ok_or("invalid shard directory")?.to_string_lossy();
+                let stem = path
+                    .file_stem()
+                    .ok_or("invalid shard filename")?
+                    .to_string_lossy();
+                let parent = path
+                    .parent()
+                    .ok_or("invalid shard path")?
+                    .file_name()
+                    .ok_or("invalid shard directory")?
+                    .to_string_lossy();
                 if key_prefix != format!("{parent}{stem}") {
                     return Err(format!("{}: misplaced entry {key}", path.display()).into());
                 }
                 let etym = record.get("etymology_number").and_then(Value::as_i64);
                 write_entry.execute(params![
-                    key, word, pos, etym, json_field(&record, "forms")?,
-                    json_field(&record, "tags")?, required(&record, "source_edition")?, 0i64,
+                    key,
+                    word,
+                    pos,
+                    etym,
+                    json_field(&record, "forms")?,
+                    json_field(&record, "tags")?,
+                    required(&record, "source_edition")?,
+                    0i64,
                 ])?;
                 stats.entries += 1;
-                let senses = record.get("senses").and_then(Value::as_array)
+                let senses = record
+                    .get("senses")
+                    .and_then(Value::as_array)
                     .ok_or("missing senses array")?;
                 for sense in senses {
-                    let mexico = sense.get("mexican_usage").and_then(Value::as_bool)
+                    let mexico = sense
+                        .get("mexican_usage")
+                        .and_then(Value::as_bool)
                         .ok_or("invalid Mexican usage flag")?;
-                    let index = sense.get("sense_index").and_then(Value::as_i64)
+                    let index = sense
+                        .get("sense_index")
+                        .and_then(Value::as_i64)
                         .ok_or("missing sense index")?;
                     write_sense.execute(params![
-                        required(sense, "id")?, key, index, required(sense, "definition_en")?,
-                        json_field(sense, "glosses")?, json_field(sense, "tags")?,
-                        json_field(sense, "raw_tags")?, json_field(sense, "examples")?,
+                        required(sense, "id")?,
+                        key,
+                        index,
+                        required(sense, "definition_en")?,
+                        json_field(sense, "glosses")?,
+                        json_field(sense, "tags")?,
+                        json_field(sense, "raw_tags")?,
+                        json_field(sense, "examples")?,
                         i64::from(mexico),
                     ])?;
                     stats.senses += 1;
-                    if mexico { stats.mexico_labeled_senses += 1; }
+                    if mexico {
+                        stats.mexico_labeled_senses += 1;
+                    }
                 }
             }
             stats.shards += 1;
@@ -148,7 +188,11 @@ pub(crate) fn load_corpus(db: &mut Connection, directory: &Path) -> Result<Loade
     }
     exact_count(&manifest, "entry_count", stats.entries)?;
     exact_count(&manifest, "sense_count", stats.senses)?;
-    exact_count(&manifest, "mexico_labeled_sense_count", stats.mexico_labeled_senses)?;
+    exact_count(
+        &manifest,
+        "mexico_labeled_sense_count",
+        stats.mexico_labeled_senses,
+    )?;
     exact_count(&manifest, "shard_count", stats.shards)?;
     transaction.commit()?;
     Ok(stats)
@@ -163,17 +207,29 @@ mod tests {
     #[test]
     fn round_trip_from_git_corpus() {
         let mut source = Connection::open_in_memory().unwrap();
-        crate::import_reader(&mut source, Cursor::new(include_str!("../tests/fixtures/sample.jsonl"))).unwrap();
-        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let directory = std::env::temp_dir().join(format!("mexilex-roundtrip-{}-{unique}", std::process::id()));
+        crate::import_reader(
+            &mut source,
+            Cursor::new(include_str!("../tests/fixtures/sample.jsonl")),
+        )
+        .unwrap();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("mexilex-roundtrip-{}-{unique}", std::process::id()));
         crate::corpus::export_corpus(&source, &directory).unwrap();
         let mut target = Connection::open_in_memory().unwrap();
         let counts = load_corpus(&mut target, &directory).unwrap();
         assert_eq!(counts.entries, 2);
         assert_eq!(counts.senses, 3);
         assert_eq!(counts.mexico_labeled_senses, 1);
-        let source_records: i64 = source.query_row("SELECT COUNT(*) FROM entries", [], |r| r.get(0)).unwrap();
-        let target_records: i64 = target.query_row("SELECT COUNT(*) FROM entries", [], |r| r.get(0)).unwrap();
+        let source_records: i64 = source
+            .query_row("SELECT COUNT(*) FROM entries", [], |r| r.get(0))
+            .unwrap();
+        let target_records: i64 = target
+            .query_row("SELECT COUNT(*) FROM entries", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(source_records, target_records);
         let mut cards = Vec::new();
         crate::export_tsv(&target, &mut cards, false).unwrap();

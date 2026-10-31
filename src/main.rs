@@ -73,7 +73,8 @@ fn run() -> Result<()> {
                 return Err(format!(
                     "refusing to overwrite existing database: {}",
                     target.display()
-                ).into());
+                )
+                .into());
             }
             if let Some(parent) = target.parent() {
                 if !parent.as_os_str().is_empty() {
