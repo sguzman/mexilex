@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      VERSION: ${{ inputs.version || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.2.0' && '0.2.0') || '0.1.0' }}
+      VERSION: "${{ inputs.version || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.2.0' && '0.2.0') || '0.1.0' }}"
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
