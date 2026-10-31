@@ -99,9 +99,8 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     for path in corpus_load::shards(corpus)? {
         for (line_index, line) in BufReader::new(File::open(&path)?).lines().enumerate() {
             let line = line?;
-            let record: Value = serde_json::from_str(&line).map_err(|error| {
-                format!("{}:{}: {error}", path.display(), line_index + 1)
-            })?;
+            let record: Value = serde_json::from_str(&line)
+                .map_err(|error| format!("{}:{}: {error}", path.display(), line_index + 1))?;
             let word = str_field(&record, "word")?;
             let id = str_field(&record, "id")?;
             if id.len() != 64 || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
@@ -115,9 +114,9 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                 return Err("entry is missing all senses".into());
             };
             let gloss = str_field(first_sense, "definition_en")?;
-            let mexican = senses.iter().any(|sense| {
-                sense.get("mexican_usage").and_then(Value::as_bool) == Some(true)
-            });
+            let mexican = senses
+                .iter()
+                .any(|sense| sense.get("mexican_usage").and_then(Value::as_bool) == Some(true));
             let form = is_form(senses);
             stats.entries += 1;
             if mexican {
@@ -145,7 +144,11 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         .and_then(Value::as_u64)
         .ok_or("manifest missing entry count")?;
     if stats.entries as u64 != expected {
-        return Err(format!("site corpus is incomplete: expected {expected}, found {}", stats.entries).into());
+        return Err(format!(
+            "site corpus is incomplete: expected {expected}, found {}",
+            stats.entries
+        )
+        .into());
     }
 
     fs::create_dir_all(destination.join("index"))?;
@@ -222,8 +225,12 @@ mod tests {
             Cursor::new(include_str!("../tests/fixtures/sample.jsonl")),
         )
         .unwrap();
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let path = std::env::temp_dir().join(format!("mexilex-site-{}-{nanos}", std::process::id()));
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path =
+            std::env::temp_dir().join(format!("mexilex-site-{}-{nanos}", std::process::id()));
         let corpus = path.join("corpus");
         let site = path.join("site");
         crate::corpus::export_corpus(&db, &corpus).unwrap();

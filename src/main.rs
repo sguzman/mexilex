@@ -100,9 +100,8 @@ fn run() -> Result<()> {
             if args.next().is_some() {
                 return Err(usage().into());
             }
-            let counts = site_export::build_site(
-                Path::new(&corpus), Path::new(&destination), &commit
-            )?;
+            let counts =
+                site_export::build_site(Path::new(&corpus), Path::new(&destination), &commit)?;
             println!("{counts:#?}");
         }
         "stats" => {
