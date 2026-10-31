@@ -36,6 +36,7 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --all-targets -- -D warnings
           cargo test --all-targets
+          test -s evidence/WIKCIONARIO-SOURCE.md
           cargo run --release -- import-mx-wikcionario \
             data/eswiktionary-mexico-source.jsonl corpus data/wikcionario-derived.jsonl
           test -s data/wikcionario-derived.jsonl
