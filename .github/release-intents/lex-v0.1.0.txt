@@ -18,3 +18,6 @@ No SRS reviews, personal progress, or learner data belong in these archives.
 The first publication attempt was skipped because the workflow's push-condition
 matched an unavailable event-added-files field. This change explicitly reruns
 publication using the corrected exact-commit-message guard.
+
+Publication condition now parses as valid Actions YAML and matches this
+exact explicit release commit message. The workflow must still pass all tests.
