@@ -26,7 +26,7 @@ test("actual-upstream summary counts old entries without silently claiming a mig
     writeFileSync(next, '{"word":"banqueta"}\n{"word":"casa"}\n{"word":"chamba"}\n');
     writeFileSync(report, [
       JSON.stringify({status:"exact",requires_review:false,senses:[{status:"same_definition"}]}),
-      JSON.stringify({status:"candidate_review",requires_review:true,changed_forms:true,added_sense_ids:["s2"],senses:[{status:"changed_annotation"}]})
+      JSON.stringify({status:"candidate_review",requires_review:true,forms_changed:true,added_sense_ids:["s2"],senses:[{status:"changed_annotation"}]})
     ].join("\n")+"\n");
     writeFileSync(checksum, "a".repeat(64)+"\n");
     const size = run(["--size-check",oldManifest,newManifest]);
