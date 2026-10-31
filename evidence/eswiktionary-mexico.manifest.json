@@ -1,0 +1,17 @@
+{
+  "distinct_spellings": 1912,
+  "distinct_word_pos": 1946,
+  "format_version": 1,
+  "lexical_language": "es-MX",
+  "license": "Wiktionary CC BY-SA/GFDL; see WIKCIONARIO-SOURCE.md",
+  "matched_spellings": 1235,
+  "matched_word_pos": 1266,
+  "matching": "case-insensitive exact spelling of a non-inflection-only headword in English Wiktionary; never a sense-level match",
+  "source": "Spanish Wiktionary via Kaikki; explicitly Mexico-tagged Español senses",
+  "source_edition": "eswiktionary",
+  "source_language": "es",
+  "source_records": 1966,
+  "source_senses": 2304,
+  "source_sha256": "6a8f210f3f23a1d1caaa4bb4771de27e3d67c74f568dfa3c3b259d739491512e",
+  "source_url": "https://kaikki.org/eswiktionary/Espa%C3%B1ol/tags/p9/Mexico/kaikki.org-dictionary-Espa%C3%B1ol-tag-Mexico.jsonl"
+}
