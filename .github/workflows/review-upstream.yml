@@ -1,0 +1,87 @@
+name: Review real upstream Wiktionary snapshot safely
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/review-upstream.yml"
+      - "scripts/summarize-upstream-review.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mexilex-upstream-review
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Download English-Wiktionary Spanish feed without modifying Git
+        run: |
+          mkdir -p data/upstream-review
+          curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
+            --output data/upstream-review/source.jsonl \
+            https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl
+          test "$(stat -c%s data/upstream-review/source.jsonl)" -gt 100000000
+          sha256sum data/upstream-review/source.jsonl | cut -d' ' -f1 > data/upstream-review/source.sha256
+      - name: Determine whether a genuinely new upstream extraction is available
+        id: source
+        run: |
+          tracked="$(tr -d '\r\n' < corpus/upstream.sha256)"
+          downloaded="$(tr -d '\r\n' < data/upstream-review/source.sha256)"
+          test "${#tracked}" -eq 64
+          test "${#downloaded}" -eq 64
+          if test "$tracked" = "$downloaded"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            printf 'Upstream extract unchanged. SHA-256: %s\n' "$downloaded" | tee data/upstream-review/status.txt
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            printf 'New upstream bytes available. Old SHA-256: %s; new SHA-256: %s\n' "$tracked" "$downloaded" | tee data/upstream-review/status.txt
+          fi
+      - name: Rebuild a NEW, disposable snapshot from actual upstream contents
+        if: steps.source.outputs.changed == 'true'
+        run: |
+          cargo run --release -- import data/upstream-review/source.jsonl data/upstream-review/updated.sqlite
+          cargo run --release -- export-corpus data/upstream-review/updated.sqlite data/upstream-review/corpus
+          cargo run --release -- export-study corpus data/upstream-review/old-study.jsonl
+          cargo run --release -- export-study data/upstream-review/corpus data/upstream-review/new-study.jsonl
+          node scripts/summarize-upstream-review.mjs --size-check \
+            corpus/manifest.json data/upstream-review/corpus/manifest.json
+      - name: Compare OLD and NEW actual Wiktionary-based study snapshots
+        if: steps.source.outputs.changed == 'true'
+        run: |
+          cargo run --release -- compare-study \
+            data/upstream-review/old-study.jsonl \
+            data/upstream-review/new-study.jsonl \
+            data/upstream-review/reconciliation.jsonl \
+            > data/upstream-review/reconciliation-stats.txt
+          node scripts/summarize-upstream-review.mjs \
+            data/upstream-review/old-study.jsonl \
+            data/upstream-review/new-study.jsonl \
+            data/upstream-review/reconciliation.jsonl \
+            data/upstream-review/corpus/manifest.json \
+            data/upstream-review/source.sha256 \
+            > data/upstream-review/summary.json
+          cat data/upstream-review/summary.json
+      - name: Upload limited evidence without any automatic corpus mutation
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiktionary-upstream-review
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            data/upstream-review/status.txt
+            data/upstream-review/source.sha256
+            data/upstream-review/summary.json
+            data/upstream-review/reconciliation-stats.txt
+            data/upstream-review/reconciliation.jsonl
+            data/upstream-review/corpus/manifest.json
