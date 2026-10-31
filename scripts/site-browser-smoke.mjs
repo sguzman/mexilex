@@ -115,9 +115,18 @@ try {
     const first = document.querySelector("#results .result-row");
     if (!first.textContent.includes("banqueta") || !first.textContent.toLowerCase().includes("sidewalk"))
       throw Error("Mexican meaning missing from search preview");
+    if (!first.querySelector(".source-tag")?.textContent.includes("WIKCIONARIO MX"))
+      throw Error("Independent Spanish-Wiktionary evidence badge missing");
     first.click();
     await wait(() => document.querySelector("#detail")?.textContent.toLowerCase().includes("sidewalk")
       && !document.querySelector("#detail")?.textContent.includes("Loading entry"), "live entry details");
+    await wait(() => document.querySelector("#detail .wikcionario-evidence a"), "independent Wikcionario evidence");
+    const source = document.querySelector("#detail .wikcionario-evidence");
+    if (!source.textContent.includes("does not identify which English definition"))
+      throw Error("Word-level evidence must not be mistaken for a particular English sense");
+    const url = source.querySelector("a")?.href;
+    if (!url?.startsWith("https://es.wiktionary.org/wiki/banqueta"))
+      throw Error("Missing original Spanish Wiktionary source link");
     const theme = document.querySelector("#theme");
     theme.value = "dark";
     theme.dispatchEvent(new Event("change", {bubbles: true}));
