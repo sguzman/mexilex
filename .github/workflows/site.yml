@@ -55,6 +55,9 @@ jobs:
           test -s data/site/mexico.json
           test -s data/site/dialogue.json
           test -s data/site/radio.json
+          test -s data/site/radio-browse.json
+          grep -q 'browse-radio' data/site/index.html
+          node -e 'const r=require("./data/site/radio-browse.json");if(r.length!==500||!r.every((x,i)=>Array.isArray(x.row)&&x.row.length===8&&typeof x.occurrences==="number"&&(i===0||r[i-1].occurrences>=x.occurrences)))process.exit(1)'
           test -s data/site/mexico-radio-source.txt
           node -e 'const r=require("./data/site/radio.json");if(!Array.isArray(r.casa)||r.casa[0]<10||r.casa[1]<10)process.exit(1)'
           node -e 'const c=require("./data/site/config.json");if(c.radio_evidence_spellings<6000)process.exit(1)'

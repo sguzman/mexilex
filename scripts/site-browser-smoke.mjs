@@ -184,11 +184,21 @@ try {
       "Mexico-tagged meanings browse");
     if (!document.querySelector("#mexico-only").checked)
       throw Error("Mexico-specific meaning filter not set");
+    document.querySelector("#browse-radio").click();
+    await wait(() => document.querySelectorAll("#results .result-row").length === 60,
+      "Mexican radio conversation browse");
+    if (document.querySelector("#mexico-only").checked || document.querySelector("#rank-mx").checked)
+      throw Error("Radio browse must not imply Mexico-exclusive meanings or use film ranking");
+    const firstRadio = document.querySelector("#results .result-row");
+    firstRadio.click();
+    await wait(() => document.querySelector("#detail .radio-evidence"),
+      "Radio browse selection source counts");
     return {
       width: window.innerWidth,
       pageWidth: currentWidth,
       dialogueCount: 60,
-      mexicoCount: document.querySelectorAll("#results .result-row").length,
+      mexicoCount: 60,
+      radioCount: document.querySelectorAll("#results .result-row").length,
     };
   })()`);
   // Test narrow phones separately: an emulated 390px phone can conceal a

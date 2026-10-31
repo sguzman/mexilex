@@ -47,6 +47,7 @@ jobs:
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}index/ba.json" -o /tmp/mexilex-live/ba.json
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}dialogue.json" -o /tmp/mexilex-live/dialogue.json
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}radio.json" -o /tmp/mexilex-live/radio.json
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}radio-browse.json" -o /tmp/mexilex-live/radio-browse.json
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}mexico-radio-source.txt" -o /tmp/mexilex-live/mexico-radio-source.txt
           grep -q "CC BY-SA 4.0" /tmp/mexilex-live/mexico-radio-source.txt
       - name: Fetch a real Mexican word from its pinned source shard
@@ -59,6 +60,7 @@ jobs:
           const index = JSON.parse(fs.readFileSync(root + 'ba.json', 'utf8'));
           const dialogue = JSON.parse(fs.readFileSync(root + 'dialogue.json', 'utf8'));
           const radio = JSON.parse(fs.readFileSync(root + 'radio.json', 'utf8'));
+          const radioBrowse = JSON.parse(fs.readFileSync(root + 'radio-browse.json', 'utf8'));
           assert.equal(dialogue.length, 500);
           assert.ok(dialogue[0][6][0] >= dialogue[1][6][0], 'Dialogue order must be descending');
           assert.equal(config.dictionary_language, 'es-MX');
@@ -68,6 +70,11 @@ jobs:
           assert.ok(config.wikcionario_mexico_headwords > 1000, "Spanish Wiktionary regional evidence missing");
           assert.equal(config.radio_evidence_spellings, 6250, "Independent Mexican radio evidence missing");
           assert.deepEqual(radio.casa, [43, 42], "Incorrect Mexican radio word and utterance counts");
+          assert.equal(radioBrowse.length, 500);
+          assert.ok(radioBrowse.every((r,i) => r.row.length === 8 && r.occurrences > 0
+            && (i === 0 || radioBrowse[i-1].occurrences >= r.occurrences)));
+          assert.ok(radioBrowse.some(r => r.row[0] === 'casa'));
+
           assert.equal(radio.banqueta, undefined, "Unobserved words must not receive fabricated speech evidence");
           const banqueta = index.find(row => row[0] === 'banqueta' && row[4] === true);
           assert.ok(banqueta, 'Missing Mexico-labeled banqueta search entry');

@@ -280,6 +280,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     let mut stats = SiteStats::default();
     let mut mexican_browse: Vec<Value> = Vec::new();
     let mut dialogue_browse: BTreeMap<String, Value> = BTreeMap::new();
+    let mut radio_browse: BTreeMap<String, (u64, Value)> = BTreeMap::new();
 
     for path in corpus_load::shards(corpus)? {
         for (line_index, line) in BufReader::new(File::open(&path)?).lines().enumerate() {
@@ -347,6 +348,26 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                         }
                     }
                 }
+                if !form {
+                    if let Some([occurrences, _utterances]) = radio_frequency.get(&word.to_lowercase()) {
+                        let candidate = json!([
+                            word,
+                            id,
+                            str_field(&record, "part_of_speech")?,
+                            gloss.chars().take(140).collect::<String>(),
+                            mexican,
+                            false,
+                            frequency.get(&word.to_lowercase()),
+                            wikcionario_mexico.contains_key(&word.to_lowercase())
+                        ]);
+                        let slot = radio_browse
+                            .entry(word.to_lowercase())
+                            .or_insert((*occurrences, Value::Null));
+                        if slot.1.is_null() || (mexican && slot.1[4] != true) {
+                            *slot = (*occurrences, candidate);
+                        }
+                    }
+                }
                 let target = if form {
                     &mut inflection_groups
                 } else {
@@ -404,6 +425,23 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     fs::write(
         destination.join("dialogue.json"),
         format!("{}\n", serde_json::to_string(&spoken)?),
+    )?;
+    // A bounded radio-conversation browse index, sorted by observed
+    // surface-token occurrences in this particular biased interview corpus.
+    // Radio attestation never changes English senses or Mexico-only flags.
+    let mut radio_spoken: Vec<(String, u64, Value)> = radio_browse
+        .into_iter()
+        .map(|(word, (count, entry))| (word, count, entry))
+        .collect();
+    radio_spoken.sort_unstable_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    radio_spoken.truncate(500);
+    let radio_items: Vec<Value> = radio_spoken
+        .into_iter()
+        .map(|(_word, occurrences, row)| json!({"occurrences": occurrences, "row": row}))
+        .collect();
+    fs::write(
+        destination.join("radio-browse.json"),
+        format!("{}\n", serde_json::to_string(&radio_items)?),
     )?;
     // A lazy-loaded separate word-frequency evidence map. No changes to
     // lexical senses, search index row schema or Mexico-specific labels.
@@ -573,6 +611,12 @@ mod tests {
             serde_json::from_reader(File::open(site.join("radio.json")).unwrap()).unwrap();
         assert_eq!(radio["casa"], json!([3, 2]));
         assert!(radio["banqueta"].is_null());
+        let radio_browse: Value =
+            serde_json::from_reader(File::open(site.join("radio-browse.json")).unwrap()).unwrap();
+        assert_eq!(radio_browse.as_array().unwrap().len(), 1);
+        assert_eq!(radio_browse[0]["row"][0], "casa");
+        assert_eq!(radio_browse[0]["row"][4], false);
+        assert_eq!(radio_browse[0]["occurrences"], 3);
         assert_eq!(banqueta[0][7], true);
         assert_eq!(casa[0][7], true);
         assert_eq!(banqueta[0][6][0], 1.06);

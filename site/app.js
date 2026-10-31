@@ -115,6 +115,7 @@ async function runSearch() {
 }
 let mexicanDialogueCache;
 let mexicoBrowseCache;
+let radioBrowseCache;
 byId("browse-mexico").addEventListener("click", async () => {
   const turn = ++sequence;
   queryInput.value = "";
@@ -169,6 +170,32 @@ byId("browse-dialogue").addEventListener("click", async () => {
     if (turn !== sequence) return;
     showStatus("Unavailable");
     displayEmpty(results, "Could not load the film-dialogue vocabulary index. Try searching a word.");
+  }
+});
+byId("browse-radio").addEventListener("click", async () => {
+  const turn = ++sequence;
+  queryInput.value = "";
+  updateLocation("");
+  mexicoOnly.checked = false;
+  includeForms.checked = false;
+  rankMexico.checked = false;
+  selectedId = null;
+  activeSearch = [];
+  displayEmpty(detail, "Choose an attested Mexican radio-conversation word to view its English meanings and source-specific counts.");
+  showStatus("Loading…");
+  try {
+    if (!radioBrowseCache) {
+      const response = await fetch("./radio-browse.json");
+      if (!response.ok) throw new Error("No radio vocabulary index");
+      radioBrowseCache = await response.json();
+    }
+    if (turn !== sequence) return;
+    activeSearch = radioBrowseCache.slice(0, 60).map(item => item.row);
+    renderResults(activeSearch, radioBrowseCache.length);
+  } catch (_) {
+    if (turn !== sequence) return;
+    showStatus("Unavailable");
+    displayEmpty(results, "Could not load Mexican radio-conversation vocabulary. Try searching a word.");
   }
 });
 let timer;
