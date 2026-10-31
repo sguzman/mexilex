@@ -1,0 +1,20 @@
+{
+  "attested_mexico": 12528,
+  "comparison": [
+    "Mexico",
+    "Spain",
+    "Argentina"
+  ],
+  "dispersion": "Mexico document dispersion per 10 films",
+  "format_version": 1,
+  "license": "GPL-2.0-only; see ACTIV-ES-LICENSE",
+  "matched_words": 21280,
+  "matching": "exact case-insensitive surface spelling of Git-tracked non-form-only headwords; no POS or sense inference",
+  "measure": "observed relative frequency per 100,000 words of film dialogue",
+  "source": "ACTIV-ES v0.2, one-gram plain surface forms",
+  "source_commit": "e42124efbd0c6c30fc8b6a93e5d3a1e9bc4c7e08",
+  "source_path": "activ-es-v.02/wordlists/plain/aes1grams.csv",
+  "source_repo": "francojc/activ-es",
+  "source_rows": 80787,
+  "source_sha256": "5bd13165565be84dc5649ca630454397204d3cf3ee41a0c9641474fc42026749"
+}
