@@ -1,0 +1,72 @@
+name: Build Mexican Spanish dictionary website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "src/**"
+      - "corpus/**"
+      - "Cargo.toml"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mexilex-website
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate website JavaScript
+        run: node --check site/app.js
+      - name: Build prefix search index from committed lexical data
+        run: cargo run --release -- build-site corpus data/site "$GITHUB_SHA"
+      - name: Verify index and deployment footprint
+        run: |
+          test -s data/site/index.html
+          test -s data/site/config.json
+          test -s data/site/index/ba.json
+          grep -q '"banqueta"' data/site/index/ba.json
+          test "$(find data/site/index -name '*.json' | wc -l)" -gt 50
+          bytes="$(du -sb data/site | cut -f1)"
+          echo "Built website: $bytes bytes"
+          test "$bytes" -lt 500000000
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mexilex-static-dictionary
+          path: data/site/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Package site for GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: data/site/
+
+  deploy:
+    # Enable Pages in Settings > Pages, choose "GitHub Actions", then set the
+    # repository variable MEXILEX_DEPLOY_PAGES=true. Until then the build and
+    # downloadable preview are available with no failing deployment job.
+    if: ${{ vars.MEXILEX_DEPLOY_PAGES == 'true' }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4

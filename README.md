@@ -10,7 +10,7 @@ The target variety is `es-MX` and the definition language is `en`. Importing gen
 - Preserve separate meanings, parts of speech, forms, examples, provenance, and regional tags.
 - Normalize into a Git-tracked, inspectable JSONL lexical corpus with deterministic shards; build SQLite for local consumers.
 - Export read-only sense data suitable for a separate future spaced-repetition trainer.
-- Later: a static, read-only public dictionary website (with System/light/dark selector).
+- Generate a static, read-only dictionary website (with System/light/dark selector) from the Git-tracked vocabulary.
 
 Mexilex will **not** hold user accounts, flashcard review dates, retention scores, or other private learning progress. A separate Rust/egui application will own those.
 
@@ -75,3 +75,7 @@ cargo test --all-targets
 ```
 
 The checked-in three-line fixture tests both the importer and deterministic Git corpus export without downloading the upstream dataset.
+
+## Website
+
+The [read-only dictionary website](site/index.html) now has a static UI and Rust-generated prefix-search indexes. Run `cargo run --release -- build-site corpus data/site "$(git rev-parse HEAD)"` to build it from the checked-in vocabulary. [Website documentation](docs/website.md) explains the search architecture, preview artifact, licensing and GitHub Pages publication setup. The separate Rust/egui spaced-repetition trainer will continue to own learning progress.
