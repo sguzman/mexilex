@@ -225,10 +225,17 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                 if !form {
                     if let Some(rate) = frequency.get(&word.to_lowercase()) {
                         let candidate = json!([
-                            word, id, str_field(&record, "part_of_speech")?,
-                            gloss.chars().take(140).collect::<String>(), mexican, false, rate
+                            word,
+                            id,
+                            str_field(&record, "part_of_speech")?,
+                            gloss.chars().take(140).collect::<String>(),
+                            mexican,
+                            false,
+                            rate
                         ]);
-                        let slot = dialogue_browse.entry(word.to_lowercase()).or_insert(Value::Null);
+                        let slot = dialogue_browse
+                            .entry(word.to_lowercase())
+                            .or_insert(Value::Null);
                         if slot.is_null() || (mexican && slot[4] != true) {
                             *slot = candidate;
                         }
@@ -278,9 +285,13 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     // Top attested headwords are distinct from Mexico-specific sense labels.
     let mut spoken: Vec<Value> = dialogue_browse.into_values().collect();
     spoken.sort_unstable_by(|a, b| {
-        b[6][0].as_f64().unwrap_or(0.0)
+        b[6][0]
+            .as_f64()
+            .unwrap_or(0.0)
             .total_cmp(&a[6][0].as_f64().unwrap_or(0.0))
-            .then(normalize(a[0].as_str().unwrap_or("")).cmp(&normalize(b[0].as_str().unwrap_or(""))))
+            .then(
+                normalize(a[0].as_str().unwrap_or("")).cmp(&normalize(b[0].as_str().unwrap_or(""))),
+            )
     });
     spoken.truncate(500);
     fs::write(
