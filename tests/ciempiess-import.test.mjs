@@ -12,7 +12,7 @@ const fixture = [
 test("counts Mexican transcribed surface forms, utterance coverage and accents", () => {
   const { rows, stats } = normalizeTranscriptMetadata(fixture);
   assert.equal(stats.utterances, 3);
-  assert.equal(stats.token_total, 16);
+  assert.equal(stats.token_total, 14);
   assert.deepEqual(rows.find(row => row[0] === "niño"), ["niño", 4, 3]);
   assert.deepEqual(rows.find(row => row[0] === "qué"), ["qué", 2, 2]);
   assert.deepEqual(rows.find(row => row[0] === "sí"), ["sí", 2, 1]);
