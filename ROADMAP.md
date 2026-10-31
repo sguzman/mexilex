@@ -8,18 +8,18 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | --- | ---: | ---: | --- |
 | ✅ Import and normalize a real lexicon | 30% | 100% | English Wiktionary Spanish JSONL → Rust → SQLite; full import of 813,928 entries and 879,019 senses; per-meaning regional labels |
 | ✅ Version the processed vocabulary in Git | 15% | 100% | 4,096 normalized JSONL shards committed on `main`; full snapshot reconstructs SQLite without redownloading upstream |
-| 🟡 Read-only dictionary presentation | 15% | 85% | System/light/dark site, source attribution, live search index generation, word details, Mexico browse, headword/inflection separation; **manual browser QA remains** |
-| 🟡 Portable trainer exports | 15% | 95% | 124,444 lemma-oriented study entries, Mexico-tagged subset, tests and versioned export format; **verify artifact publication and stable ID reconciliation before syncing real review history** |
+| 🟡 Read-only dictionary presentation | 15% | 92% | System/light/dark site, source attribution, indexed lookup, Mexico discovery, split forms; desktop/mobile Chromium QA of generated assets passed with mocked network, **real deployed fetch and mobile-device QA remain** |
+| 🟡 Portable trainer exports | 15% | 98% | 124,444 headword-style entries; downloadable checksummed packages; full same-version reconciliation passed; **validate real cross-version migrations and publish a permanent release before enabling trainer synchronization** |
 | 🟡 Mexican usage evidence enrichment | 15% | 15% | 2,115 source-verified Mexico-labeled senses and [licensing-aware source audit](docs/mexican-source-audit.md); **no unverified commercial/bulk dictionary import; source selection and frequency evidence are still open** |
 | ⬜ Public website deployment | 10% | 0% | GitHub Pages GitHub-Actions deployment workflow exists; **not considered complete until Pages is configured, deployed, and independently browser-tested** |
 
-**Weighted progress: approximately 75%.** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 76% (+1 point from the previous 75% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
 1. **Website QA:** enable Pages only when authorized/configured, then verify the public UI in a real browser on desktop and mobile (including accents, `ñ`, Mexico filters and raw-entry fetches).
 2. **Regional evidence:** identify a redistributable Mexico-specific frequency/usage dataset; keep frequency data and dictionary regional meanings separate and preserve provenance.
-3. **Trainer contract stability:** test upgrade reconciliation across two different upstream snapshots and guarantee that dictionary refreshes never erase a future trainer's review history.
-4. **Permanent distribution:** promote verified study artifacts to durable versioned releases, including checksums and license notices, only after the contract is stable.
+3. **Trainer contract stability:** `compare-study` now rejects ambiguous, missing, or changed identities and passed a 124,444-entry self-comparison; validate a genuinely different upstream snapshot and consumer-specific migration behavior before synchronizing private reviews.
+4. **Permanent distribution:** the opt-in, versioned packaging workflow passes a full preview build with checksums and license notices. Publish a durable release explicitly when the contract is ready, and verify the published downloads.
 
 Do not add additional languages, user accounts, SRS algorithms, or unrelated ontology to Mexilex.
