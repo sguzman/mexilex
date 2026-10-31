@@ -1,0 +1,32 @@
+name: Validate committed lexical corpus
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/validate-corpus.yml
+      - src/**
+      - Cargo.toml
+      - corpus/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build local search database from the Git versioned corpus
+        run: |
+          test -s corpus/manifest.json
+          cargo run --release -- build-from-corpus corpus data/rebuilt.sqlite
+          cargo run --release -- stats data/rebuilt.sqlite
+          cargo run --release -- lookup data/rebuilt.sqlite banqueta
+      - name: Ensure database is actually populated
+        run: |
+          test -s data/rebuilt.sqlite
+          test "$(stat -c%s data/rebuilt.sqlite)" -gt 1000000
