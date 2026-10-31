@@ -134,6 +134,21 @@ try {
     theme.value = "system";
     theme.dispatchEvent(new Event("change", {bubbles: true}));
     if (document.documentElement.dataset.theme !== "") throw Error("System mode failed");
+    // Real Mexican spoken-language data must be visible only as a separately
+    // attributed evidence section; never as a fabricated Mexican sense tag.
+    input.value = "casa";
+    input.dispatchEvent(new Event("input", {bubbles: true}));
+    await wait(() => document.querySelector("#results .result-row .word")?.textContent === "casa",
+      "casa search");
+    document.querySelector("#results .result-row").click();
+    await wait(() => document.querySelector("#detail .radio-evidence")?.textContent.includes(
+      "43 occurrences in 42 separate spoken segments"), "live Mexican radio evidence");
+    const radio = document.querySelector("#detail .radio-evidence");
+    if (!radio.textContent.includes("not a Mexico-specific meaning")
+        || !radio.querySelector("a")?.href.endsWith("/mexico-radio-source.txt"))
+      throw Error("Unqualified or unattributed radio evidence");
+    if (document.querySelector("#results .result-row .tag")?.textContent === "MEXICO")
+      throw Error("Corpus frequency must not relabel an ordinary word as Mexico-specific");
     return {
       results: document.querySelectorAll("#results .result-row").length,
       detail: document.querySelector("#detail").textContent.slice(0, 120),
