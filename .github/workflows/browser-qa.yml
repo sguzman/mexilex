@@ -1,11 +1,10 @@
 name: Browser QA of public Mexican Spanish dictionary
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/browser-qa.yml"
-      - "scripts/site-browser-smoke.mjs"
+  workflow_run:
+    workflows:
+      - "Build Mexican Spanish dictionary website"
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -13,10 +12,13 @@ permissions:
 
 jobs:
   browser:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
