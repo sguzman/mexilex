@@ -1,0 +1,21 @@
+{
+  "format_version": 1,
+  "source": "CIEMPIESS LIGHT Mexican radio conversations",
+  "source_url": "https://huggingface.co/datasets/ciempiess/ciempiess_light/resolve/e9e6dc556ba8479f54160701a7542a67de1fbe14/corpus/files/metadata_train.tsv",
+  "source_revision": "e9e6dc556ba8479f54160701a7542a67de1fbe14",
+  "source_sha256": "c3887d0e4b6adefa4ef5aa80dc76f858c89ad1a131e7f2b3f49b7316cbdad1f4",
+  "output_sha256": "ce1c3573e5b1a4f951dae347e3d176fe6a1bc9a84fb22711169dd33f69c046e2",
+  "license": "CC BY-SA 4.0; see CIEMPIESS-SOURCE.md",
+  "lexical_language": "es-MX",
+  "frequency_scope": "Central-Mexican Spanish radio interview segments, mainly law and university topics",
+  "measure": "orthographic surface-token occurrences and distinct utterance occurrences",
+  "matching": "not matched to meanings or lemmas; no Mexico-only inference",
+  "normalization": "Unicode NFC, Spanish lowercase, sequences of Unicode letters and combining marks",
+  "privacy": "aggregated tokens occurring at least twice; no audio, utterances, audio IDs, or speaker metadata",
+  "utterances": 16663,
+  "token_total": 167118,
+  "distinct_surface_tokens": 12201,
+  "published_surface_tokens": 6250,
+  "excluded_singleton_types": 5951,
+  "minimum_occurrences": 2
+}
