@@ -11,13 +11,13 @@ This is a weighted **engineering-readiness** estimate, not a percentage of all p
 | 🟡 Read-only dictionary presentation | 15% | 92% | System/light/dark site, source attribution, indexed lookup, Mexico discovery, split forms; desktop/mobile Chromium QA of generated assets passed with mocked network, **real deployed fetch and mobile-device QA remain** |
 | 🟡 Portable trainer exports | 15% | 98% | 124,444 headword-style entries; downloadable checksummed packages; full same-version reconciliation passed; **validate real cross-version migrations and publish a permanent release before enabling trainer synchronization** |
 | 🟡 Mexican usage evidence enrichment | 15% | 15% | 2,115 source-verified Mexico-labeled senses and [licensing-aware source audit](docs/mexican-source-audit.md); **no unverified commercial/bulk dictionary import; source selection and frequency evidence are still open** |
-| ⬜ Public website deployment | 10% | 0% | GitHub Pages GitHub-Actions deployment workflow exists; **not considered complete until Pages is configured, deployed, and independently browser-tested** |
+| 🟡 Public website deployment | 10% | 85% | GitHub Pages build and deploy jobs succeeded; GitHub reported https://sguzman.github.io/mexilex/; **user Firefox and live external fetch verification still outstanding** |
 
-**Weighted progress: approximately 76% (+1 point from the previous 75% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
+**Weighted progress: approximately 84% (+8 percentage points from the previous 76% report).** Figures are estimates with clear acceptance criteria, not assertions that all words in Mexico are already represented.
 
 ## Next bounded work
 
-1. **Website QA:** enable Pages only when authorized/configured, then verify the public UI in a real browser on desktop and mobile (including accents, `ñ`, Mexico filters and raw-entry fetches).
+1. **Website QA:** the public Pages deployment succeeded; verify the actual URL in Firefox on desktop and mobile, including accents, `ñ`, Mexico filters and live raw-entry fetching.
 2. **Regional evidence:** identify a redistributable Mexico-specific frequency/usage dataset; keep frequency data and dictionary regional meanings separate and preserve provenance.
 3. **Trainer contract stability:** `compare-study` now rejects ambiguous, missing, or changed identities and passed a 124,444-entry self-comparison; validate a genuinely different upstream snapshot and consumer-specific migration behavior before synchronizing private reviews.
 4. **Permanent distribution:** the opt-in, versioned packaging workflow passes a full preview build with checksums and license notices. Publish a durable release explicitly when the contract is ready, and verify the published downloads.

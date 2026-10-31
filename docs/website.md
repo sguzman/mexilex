@@ -23,13 +23,15 @@ Serve `data/site` through any local static HTTP server. File-based `file://` pre
 
 The [website workflow](../.github/workflows/site.yml) builds and tests the index, checks JavaScript syntax, and uploads a preview artifact from GitHub Actions.
 
-## Publish with GitHub Pages
+## Public GitHub Pages deployment
 
-1. On GitHub, open repository **Settings → Pages**. Set **Build and deployment → Source: GitHub Actions**.
-2. In **Settings → Secrets and variables → Actions → Variables**, create `MEXILEX_DEPLOY_PAGES` with value `true`.
-3. Rerun the **Build Mexican Spanish dictionary website** workflow in Actions. Its deployment job will publish the validated static artifact.
+**Published URL (reported by GitHub Pages): https://sguzman.github.io/mexilex/**
 
-GitHub Pages is **not assumed to be enabled** merely because this workflow exists. The explicit opt-in prevents a misconfigured deployment from hiding build/test status. The site should then be hosted at the GitHub Pages URL shown by the successful deployment.
+The [website workflow](../.github/workflows/site.yml) now automatically deploys the validated static site after each site-relevant `main` change. The deployment job succeeded on 2026-10-31, and GitHub reported the URL above. No extra repository deployment variable is required.
+
+An independent HTTP check from this execution environment was not possible because its external DNS/network access failed. The deployment itself is verified by GitHub Actions, but end-user Firefox and actual cross-origin source fetches still need confirmation; do not conflate those separate checks.
+
+Deployment verification run: https://github.com/sguzman/mexilex/actions/runs/41241157586
 
 ## Licensing
 

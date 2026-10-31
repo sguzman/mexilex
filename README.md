@@ -1,5 +1,7 @@
 # Mexilex
 
+**Public dictionary website: [sguzman.github.io/mexilex](https://sguzman.github.io/mexilex/)**
+
 **Mexican Spanish lexical data, explained in English.** Mexilex is a public, reproducible dictionary and machine-readable lexical catalogue, not a flashcard scheduler.
 
 The target variety is `es-MX` and the definition language is `en`. Importing general Spanish entries is intentional: words used in Mexico do not need a special regional label. Individual word *senses* are marked as Mexican only when an upstream source explicitly says so. Absence of a Mexican label is **not** evidence that a sense is unused in Mexico.
@@ -78,7 +80,7 @@ The checked-in three-line fixture tests both the importer and deterministic Git 
 
 ## Website
 
-The [read-only dictionary website](site/index.html) now has a static UI and Rust-generated prefix-search indexes. Run `cargo run --release -- build-site corpus data/site "$(git rev-parse HEAD)"` to build it from the checked-in vocabulary. [Website documentation](docs/website.md) explains the search architecture, preview artifact, licensing and GitHub Pages publication setup. The separate Rust/egui spaced-repetition trainer will continue to own learning progress.
+The [public dictionary website](https://sguzman.github.io/mexilex/) is deployed via GitHub Pages and has a static UI and Rust-generated prefix-search indexes. Run `cargo run --release -- build-site corpus data/site "$(git rev-parse HEAD)"` to build it from the checked-in vocabulary. [Website documentation](docs/website.md) explains the search architecture, preview artifact, licensing and GitHub Pages publication setup. The separate Rust/egui spaced-repetition trainer will continue to own learning progress.
 
 ## Study exports (for a separate trainer)
 
