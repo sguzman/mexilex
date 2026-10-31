@@ -46,16 +46,17 @@ function bucketOf(q) {
   if (chars.length < 2) return null;
   return chars.slice(0, 2).map(c => /^[a-z0-9]$/.test(c) ? c : "_").join("");
 }
-async function getIndex(bucket) {
-  if (cache.has(bucket)) return cache.get(bucket);
+async function getIndex(bucket, forms = false) {
+  const path = (forms ? "forms/" : "index/") + bucket + ".json";
+  if (cache.has(path)) return cache.get(path);
   const promise = (async () => {
-    const response = await fetch("./index/" + bucket + ".json");
+    const response = await fetch("./" + path);
     if (response.status === 404) return [];
     if (!response.ok) throw new Error("Index fetch failed: " + response.status);
     return response.json();
   })();
-  cache.set(bucket, promise);
-  try { return await promise; } catch (err) { cache.delete(bucket); throw err; }
+  cache.set(path, promise);
+  try { return await promise; } catch (err) { cache.delete(path); throw err; }
 }
 function resultMatches(record, q) {
   return fold(record[0]).startsWith(q) && (!mexicoOnly.checked || record[4]) && (includeForms.checked || !record[5]);
@@ -92,8 +93,11 @@ async function runSearch() {
   }
   showStatus("Searching…");
   try {
-    const index = await getIndex(bucket);
+    const ordinary = await getIndex(bucket);
+    const inflections = includeForms.checked ? await getIndex(bucket, true) : [];
     if (turn !== sequence) return;
+    const index = ordinary.concat(inflections);
+    index.sort((a, b) => fold(a[0]).localeCompare(fold(b[0]), "es") || Number(a[5]) - Number(b[5]) || a[2].localeCompare(b[2], "en"));
     const q = fold(query);
     const matches = [];
     let total = 0;

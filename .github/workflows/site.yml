@@ -35,6 +35,7 @@ jobs:
           test -s data/site/config.json
           test -s data/site/mexico.json
           test -s data/site/index/ba.json
+          test -s data/site/forms/ca.json
           grep -q '"banqueta"' data/site/index/ba.json
           test "$(find data/site/index -name '*.json' | wc -l)" -gt 50
           bytes="$(du -sb data/site | cut -f1)"

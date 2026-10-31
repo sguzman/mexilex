@@ -19,6 +19,7 @@ pub(crate) struct SiteStats {
     mexico_labeled_entries: usize,
     inflected_entries: usize,
     index_buckets: usize,
+    form_buckets: usize,
 }
 
 struct SearchRecord {
@@ -62,6 +63,30 @@ fn str_field<'a>(record: &'a Value, field: &str) -> Result<&'a str> {
         .ok_or_else(|| format!("corpus record missing {field}").into())
 }
 
+fn write_indexes(groups: BTreeMap<String, Vec<SearchRecord>>, directory: &Path) -> Result<usize> {
+    fs::create_dir_all(directory)?;
+    let mut count = 0;
+    for (prefix, mut records) in groups {
+        records.sort_unstable_by(|a, b| {
+            a.normalized.cmp(&b.normalized)
+                .then(a.pos.cmp(&b.pos))
+                .then(a.key.cmp(&b.key))
+        });
+        let mut writer = BufWriter::new(File::create(directory.join(format!("{prefix}.json")))?);
+        writer.write_all(b"[")?;
+        for (index, record) in records.into_iter().enumerate() {
+            if index != 0 { writer.write_all(b",")?; }
+            serde_json::to_writer(&mut writer, &json!([
+                record.word, record.key, record.pos, record.gloss, record.mexico, record.form
+            ]))?;
+        }
+        writer.write_all(b"]\n")?;
+        writer.flush()?;
+        count += 1;
+    }
+    Ok(count)
+}
+
 pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Result<SiteStats> {
     if commit.len() != 40 || !commit.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err("expected a full 40-digit Git commit SHA".into());
@@ -84,6 +109,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         return Err("site requires es-MX vocabulary with English definitions".into());
     }
     let mut groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
+    let mut inflection_groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
     let mut stats = SiteStats::default();
     let mut mexican_browse: Vec<Value> = Vec::new();
 
@@ -128,7 +154,8 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                         false
                     ]));
                 }
-                groups.entry(prefix).or_default().push(SearchRecord {
+                let target = if form { &mut inflection_groups } else { &mut groups };
+                target.entry(prefix).or_default().push(SearchRecord {
                     word: word.to_owned(),
                     key: id.to_owned(),
                     pos: str_field(&record, "part_of_speech")?.to_owned(),
@@ -152,39 +179,8 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         .into());
     }
 
-    fs::create_dir_all(destination.join("index"))?;
-    for (prefix, mut records) in groups {
-        records.sort_unstable_by(|a, b| {
-            a.normalized
-                .cmp(&b.normalized)
-                .then(a.form.cmp(&b.form))
-                .then(a.pos.cmp(&b.pos))
-                .then(a.key.cmp(&b.key))
-        });
-        let mut writer = BufWriter::new(File::create(
-            destination.join("index").join(format!("{prefix}.json")),
-        )?);
-        writer.write_all(b"[")?;
-        for (index, record) in records.into_iter().enumerate() {
-            if index != 0 {
-                writer.write_all(b",")?;
-            }
-            serde_json::to_writer(
-                &mut writer,
-                &json!([
-                    record.word,
-                    record.key,
-                    record.pos,
-                    record.gloss,
-                    record.mexico,
-                    record.form
-                ]),
-            )?;
-        }
-        writer.write_all(b"]\n")?;
-        writer.flush()?;
-        stats.index_buckets += 1;
-    }
+    stats.index_buckets = write_indexes(groups, &destination.join("index"))?;
+    stats.form_buckets = write_indexes(inflection_groups, &destination.join("forms"))?;
     // A small, independently downloadable browse list for discovering Mexico-tagged
     // headwords without knowing an initial query. No word list is hand-maintained.
     mexican_browse.sort_unstable_by(|a, b| {
@@ -208,6 +204,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         "senses": manifest["sense_count"],
         "mexican_senses": manifest["mexico_labeled_sense_count"],
         "index_buckets": stats.index_buckets,
+        "form_buckets": stats.form_buckets,
         "mexico_labeled_entries": stats.mexico_labeled_entries,
         "inflected_entries": stats.inflected_entries,
         "dictionary_language": "es-MX",
@@ -248,6 +245,7 @@ mod tests {
         assert_eq!(stats.entries, 2);
         assert_eq!(stats.mexico_labeled_entries, 1);
         assert_eq!(stats.index_buckets, 2);
+        assert_eq!(stats.form_buckets, 0);
         let featured: Value =
             serde_json::from_reader(File::open(site.join("mexico.json")).unwrap()).unwrap();
         assert_eq!(featured.as_array().unwrap().len(), 1);
@@ -269,6 +267,35 @@ mod tests {
         assert!(build_site(&corpus, &site, &"a".repeat(40)).is_err());
         assert!(build_site(&corpus, &path.join("other"), "bad").is_err());
         fs::remove_dir_all(path).unwrap();
+    }
+
+    #[test]
+    fn inflected_forms_are_separate_from_default_search() {
+        let mut db = Connection::open_in_memory().unwrap();
+        let fixture = concat!(
+            "{\"lang_code\":\"es\",\"word\":\"caminar\",\"pos\":\"verb\",\"senses\":[{\"glosses\":[\"to walk\"],\"tags\":[]}]}\n",
+            "{\"lang_code\":\"es\",\"word\":\"caminé\",\"pos\":\"verb\",\"senses\":[{\"glosses\":[\"first-person preterite of caminar\"],\"tags\":[\"form-of\"]}]}\n"
+        );
+        crate::import_reader(&mut db, Cursor::new(fixture)).unwrap();
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("mexilex-index-split-{}-{nanos}", std::process::id()));
+        let source = root.join("corpus");
+        let target = root.join("site");
+        crate::corpus::export_corpus(&db, &source).unwrap();
+        let result = build_site(&source, &target, &"f".repeat(40)).unwrap();
+        assert_eq!(result.entries, 2);
+        assert_eq!(result.inflected_entries, 1);
+        assert_eq!(result.index_buckets, 1);
+        assert_eq!(result.form_buckets, 1);
+        let headwords: Value = serde_json::from_reader(File::open(target.join("index/ca.json")).unwrap()).unwrap();
+        let inflections: Value = serde_json::from_reader(File::open(target.join("forms/ca.json")).unwrap()).unwrap();
+        assert_eq!(headwords.as_array().unwrap().len(), 1);
+        assert_eq!(inflections.as_array().unwrap().len(), 1);
+        assert_eq!(headwords[0][0], "caminar");
+        assert_eq!(inflections[0][0], "caminé");
+        assert_eq!(headwords[0][5], false);
+        assert_eq!(inflections[0][5], true);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

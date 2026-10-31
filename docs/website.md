@@ -6,7 +6,7 @@ The website is a **read-only presentation layer** for Mexilex. It is not a flash
 
 - A Rust generator scans `corpus/`, already committed to Git.
 - It writes lightweight JSON search buckets, keyed by the first two letters of a normalized word. No JavaScript toolchain or npm dependencies.
-- Browser search downloads **only the relevant prefix bucket**. A separate lightweight `mexico.json` browse index allows discovery of explicitly Mexico-tagged headwords without first knowing a word. By default it hides entries that are only inflected forms.
+- Browser search downloads **only the relevant prefix bucket**. A separate lightweight `mexico.json` browse index allows discovery of explicitly Mexico-tagged headwords without first knowing a word. The normal `index/` directory includes headwords only; `forms/` contains inflected forms and is fetched only if the user activates **Include conjugated and inflected forms**.
 - Selecting a result retrieves **one Git-tracked lexical shard** from `raw.githubusercontent.com`, pinned to the build's exact commit SHA.
 - Definitions are English and the recorded headwords are Spanish. A Mexico badge means **explicitly tagged Mexican usage**, not the sole set of words used in Mexico.
 - Interface theme defaults to System, with manual Light and Dark choices.
