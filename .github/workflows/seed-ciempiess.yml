@@ -1,0 +1,73 @@
+name: Import licensed CIEMPIESS Mexican conversation word counts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/seed-ciempiess.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mexilex-ciempiess-evidence
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate importer and source rights notice
+        run: |
+          node --check scripts/import-ciempiess.mjs
+          node --test tests/ciempiess-import.test.mjs
+          test -s evidence/CIEMPIESS-SOURCE.md
+      - name: Fetch only the pinned transcript metadata
+        run: |
+          mkdir -p data
+          curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
+            --max-time 90 \
+            -o data/ciempiess-metadata.tsv \
+            "https://huggingface.co/datasets/ciempiess/ciempiess_light/resolve/e9e6dc556ba8479f54160701a7542a67de1fbe14/corpus/files/metadata_train.tsv"
+          echo "c3887d0e4b6adefa4ef5aa80dc76f858c89ad1a131e7f2b3f49b7316cbdad1f4  data/ciempiess-metadata.tsv" | sha256sum --check
+      - name: Import licensed aggregate only and check coverage
+        run: |
+          node scripts/import-ciempiess.mjs \
+            data/ciempiess-metadata.tsv \
+            data/ciempiess-frequency.jsonl \
+            data/ciempiess-frequency.manifest.json
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const manifest=JSON.parse(fs.readFileSync('data/ciempiess-frequency.manifest.json','utf8'));
+          assert.equal(manifest.utterances,16663);
+          assert.ok(manifest.token_total > 50000);
+          assert.ok(manifest.published_surface_tokens > 1000);
+          assert.ok(manifest.published_surface_tokens < 50000);
+          assert.equal(manifest.minimum_occurrences,2);
+          const rows=fs.readFileSync('data/ciempiess-frequency.jsonl','utf8').trimEnd().split('\n').map(JSON.parse);
+          assert.equal(rows.length,manifest.published_surface_tokens);
+          assert.ok(rows.every(([word,count,docs])=>typeof word==='string'&&count>=2&&docs<=count&&docs>0));
+          assert.ok(rows.some(row=>row[0]==='méxico'));
+          console.log('Safe CIEMPIESS counts:',JSON.stringify({utterances:manifest.utterances,token_total:manifest.token_total,words:rows.length}));
+          NODE
+      - name: Commit aggregate evidence only
+        run: |
+          test ! -e evidence/ciempiess-light-frequency.jsonl
+          test ! -e evidence/ciempiess-light-frequency.manifest.json
+          cp data/ciempiess-frequency.jsonl evidence/ciempiess-light-frequency.jsonl
+          cp data/ciempiess-frequency.manifest.json evidence/ciempiess-light-frequency.manifest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- evidence/ciempiess-light-frequency.jsonl evidence/ciempiess-light-frequency.manifest.json
+          git commit -m "data: add licensed Mexican radio conversation word counts"
+          git pull --rebase origin main
+          git push origin HEAD:main
