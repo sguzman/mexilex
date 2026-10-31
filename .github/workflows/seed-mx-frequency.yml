@@ -38,6 +38,7 @@ jobs:
           cargo run --release -- import-mx-frequency data/aes1grams.csv corpus evidence/activ-es-v02.jsonl
           test -s evidence/activ-es-v02.jsonl
           test -s evidence/activ-es-v02.manifest.json
+          grep -q '"source_commit"' evidence/activ-es-v02.manifest.json
           test "$(wc -l < evidence/activ-es-v02.jsonl)" -gt 3000
           grep -q '"casa"' evidence/activ-es-v02.jsonl
           du -h evidence/activ-es-v02.jsonl
