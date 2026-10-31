@@ -83,3 +83,7 @@ The [read-only dictionary website](site/index.html) now has a static UI and Rust
 ## Study exports (for a separate trainer)
 
 `mexilex export-study corpus data/study.jsonl` creates a new, versioned JSONL study-entry file from the lexical records **already checked into Git**. It excludes entries that are purely `form-of` inflections by default, but retains every meaning of the surviving headwords. Options `--mexico-only` and `--include-forms` can be combined. See [study export contract](docs/study-export.md). No review history, user account, or spaced-repetition algorithm is embedded in these records.
+
+## Mexican language evidence
+
+[Mexican Spanish enrichment source audit](docs/mexican-source-audit.md) records candidate frequency and usage datasets, their licensing limitations, and the rule that attested Mexican frequency **must not be mistaken for** an explicitly Mexico-specific dictionary meaning. No unverified third-party corpus has been imported.
