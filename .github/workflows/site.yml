@@ -6,6 +6,7 @@ on:
     paths:
       - "site/**"
       - "src/site_export.rs"
+      - "src/evidence.rs"
       - "src/lexical.rs"
       - "src/corpus_load.rs"
       - "src/corpus.rs"

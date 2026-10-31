@@ -350,6 +350,40 @@ mod tests {
     }
 
     #[test]
+    fn external_frequency_evidence_appears_without_relabeling_general_spanish() {
+        let mut db = Connection::open_in_memory().unwrap();
+        crate::import_reader(
+            &mut db,
+            Cursor::new(include_str!("../tests/fixtures/sample.jsonl")),
+        ).unwrap();
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("mexilex-evidence-{}-{nanos}", std::process::id()));
+        let corpus = root.join("corpus");
+        let site = root.join("site");
+        let evidence = root.join("evidence");
+        crate::corpus::export_corpus(&db, &corpus).unwrap();
+        fs::create_dir_all(&evidence).unwrap();
+        fs::write(evidence.join("activ-es-v02.jsonl"),
+            "[\"banqueta\",1.06,0.0,0.12,0.42]\n[\"casa\",120.12,160.43,154.62,8.99]\n").unwrap();
+        fs::write(evidence.join("activ-es-v02.manifest.json"),
+            format!("{{\"format_version\":1,\"source_commit\":\"{}\",\"attested_mexico\":2}}", crate::evidence::SOURCE_COMMIT)).unwrap();
+        build_site(&corpus, &site, &"e".repeat(40)).unwrap();
+        let banqueta: Value = serde_json::from_reader(File::open(site.join("index/ba.json")).unwrap()).unwrap();
+        let casa: Value = serde_json::from_reader(File::open(site.join("index/ca.json")).unwrap()).unwrap();
+        let config: Value = serde_json::from_reader(File::open(site.join("config.json")).unwrap()).unwrap();
+        assert_eq!(config["mexico_dialogue_headwords"], 2);
+        assert_eq!(banqueta[0][6][0], 1.06);
+        assert_eq!(banqueta[0][4], true);
+        assert_eq!(casa[0][6][0], 120.12);
+        assert_eq!(casa[0][4], false); // frequency is not a Mexico-specific sense
+        assert!(site.join("mexico-frequency-license.txt").exists());
+        fs::write(evidence.join("activ-es-v02.manifest.json"),
+            "{\"format_version\":1,\"source_commit\":\"wrong\",\"attested_mexico\":2}").unwrap();
+        assert!(build_site(&corpus, &root.join("other-site"), &"e".repeat(40)).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn inflected_forms_are_separate_from_default_search() {
         let mut db = Connection::open_in_memory().unwrap();
         let fixture = concat!(
