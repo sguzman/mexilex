@@ -65,6 +65,7 @@ function renderResults(matches, total, sample = false) {
     const head = el("div", "result-head");
     head.append(el("span", "word", row[0]), el("span", "pos", row[2]));
     if (row[4]) head.append(el("span", "tag", "MEXICO"));
+    if (row[7]) head.append(el("span", "tag source-tag", "WIKCIONARIO MX"));
     btn.append(head, el("div", "preview", row[3]));
     btn.addEventListener("click", () => selectEntry(row));
     fragment.append(btn);
@@ -218,7 +219,7 @@ async function selectEntry(selected) {
     }
     if (selectedId !== id) return;
     if (!record) throw new Error("The selected entry was not found in its source shard");
-    showEntry(record, selected[6]);
+    showEntry(record, selected[6], Boolean(selected[7]));
   } catch (_) {
     if (selectedId !== selected[1]) return;
     const note = el("p", "empty", "This entry could not be loaded. The original Wiktionary entry is still available:");
@@ -227,7 +228,7 @@ async function selectEntry(selected) {
     detail.replaceChildren(note, links);
   }
 }
-function showEntry(record, dialogueFrequency) {
+function showEntry(record, dialogueFrequency, wikcionarioMx) {
   const container = el("div", "detail-content");
   const head = el("div", "detail-header");
   const titlebox = el("div");
@@ -243,6 +244,14 @@ function showEntry(record, dialogueFrequency) {
     const note = el("small", "", "ACTIV-ES v0.2 · Film-subtitle word frequency (surface spelling), not a regional-sense label.");
     frequencies.append(note);
     container.append(frequencies);
+  }
+  if (wikcionarioMx) {
+    const regional = el("section", "wikcionario-evidence");
+    regional.append(el("strong", "", "Mexican regional evidence · Spanish Wiktionary"));
+    regional.append(el("p", "", "Spanish Wiktionary explicitly tags at least one sense of this spelling as used in Mexico. This does not identify which English definition, if any, corresponds to that sense."));
+    sourceLink(regional, "Check the Spanish Wiktionary entry ↗",
+      "https://es.wiktionary.org/wiki/" + encodeURIComponent(record.word) + "#Español");
+    container.append(regional);
   }
   const senses = Array.isArray(record.senses) ? record.senses : [];
   senses.forEach((sense, index) => {
