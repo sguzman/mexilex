@@ -14,3 +14,6 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test --all-targets
+      - run: node --check scripts/guard-upstream-refresh.mjs
+      - run: node --check scripts/summarize-upstream-review.mjs
+      - run: node --test tests/upstream-refresh.test.mjs
