@@ -53,7 +53,7 @@ The [Validate committed lexical corpus](../.github/workflows/validate-corpus.yml
 
 Each artifact also contains `manifest.json` with the source commit and language contract, `SHA256SUMS`, and `CORPUS-LICENSE.md`. This permits the future trainer to import a verified snapshot without cloning the entire source corpus or downloading Wiktionary.
 
-**Artifact retention is 14 days.** It is not a permanent release channel, and not an upload of personal review history. For durable public distribution, a later release workflow should publish these files with stable version names and checksums.
+**Artifact retention is 14 days.** It is not a permanent release channel or an upload of personal review history. For durable public distribution, use the already-published [lex-v0.2.0 release](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0), which includes stateless study exports, separately licensed regional evidence, and SHA-256 checksums.
 
 ## Comparing dictionary snapshots before upgrading a trainer
 
@@ -68,8 +68,8 @@ mexilex compare-study old-study.jsonl new-study.jsonl reconciliation.jsonl
 The comparison emits a **non-destructive, one-row-per-previous-entry JSONL report**:
 
 - `exact`: the lexical ID still exists in the new snapshot. Individual senses are checked for equal English definitions.
-- `candidate_review`: the old ID disappeared but precisely one new entry has the same source edition, Spanish headword, part of speech, and etymology number. **Never auto-migrate this candidate without review.**
-- `ambiguous`: multiple lexical entries share those fallback attributes. Candidate IDs are included; none is selected.
+- `candidate_review`: the old ID disappeared and exactly one **unclaimed** new entry has the same source edition, Spanish headword, part of speech, and etymology number, with **exactly one unmatched old entry** sharing that identity. IDs still present in the old snapshot are reserved, including conflicts. **Never auto-migrate this candidate without review.**
+- `ambiguous`: multiple new candidates exist **or multiple old entries could claim one or more new candidates**. Candidate IDs are included; none is selected. This prevents accidentally merging review histories from homographs.
 - `id_conflict`: an existing entry ID unexpectedly points to a different headword, part of speech, etymology, or source. Never treat that as a safe match.
 - `missing`: no match is found. Historical review events should remain in the trainer, marked as referring to an older snapshot.
 
@@ -87,6 +87,6 @@ CI and versioned study packages include a **separate** `mexico-dialogue-frequenc
 
 The corpus CI workflow also creates a **temporary** revised study snapshot from the real 124,444-entry export using a dependency-free Node script. It exercises a changed English gloss, altered sense annotations, new word forms, a newly added sense, a replaced entry ID, and a missing entry. A new reconciliation JSONL report is checked for flagged and unchanged records. This is a regression simulation, **not evidence of validation against two distinct upstream Wiktionary editions**; the latter remains a release criterion before automatic trainer upgrades.
 
-## Supplemental Wikcionario Mexico-word evidence (future packages)
+## Supplemental Wikcionario Mexico-word evidence (published in v0.2.0)
 
-Future study-export builds also bundle `wikcionario-mexico.jsonl`, its source manifest, and `WIKCIONARIO-SOURCE.md` with CC BY-SA/GFDL credit. Each `[word, POS, tagged_sense_count, matched]` record describes **a Spanish Wiktionary spelling with independent Mexico-tagged senses**. It does not map to a particular English Wiktionary meaning and must never trigger a trainer to change an English sense-level region label or erase review history. The published `lex-v0.1.0` archive predates this source; the additional data will be included in a future release, not retroactively inserted into v0.1.0.
+The published [lex-v0.2.0 study package](https://github.com/sguzman/mexilex/releases/tag/lex-v0.2.0) bundles `wikcionario-mexico.jsonl`, its source manifest, and `WIKCIONARIO-SOURCE.md` with CC BY-SA/GFDL credit. Each `[word, POS, tagged_sense_count, matched]` record describes **a Spanish Wiktionary spelling with independent Mexico-tagged senses**. It does not map to a particular English Wiktionary meaning and must never trigger a trainer to change an English sense-level region label or erase review history. The published `lex-v0.1.0` archive predates this source and remains unchanged.
