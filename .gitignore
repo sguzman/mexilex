@@ -1,0 +1,9 @@
+/target/
+/data/
+/*.sqlite
+/*.sqlite-*
+*.jsonl
+*.jsonl.gz
+*.db
+*.db-*
+!.github/
