@@ -40,3 +40,8 @@ Dictionary content originates from English Wiktionary via Kaikki/Wiktextract. Th
 ## Browser QA record (2026-10-31)
 
 The generated site artifact was inspected with Chromium at desktop (1365 px) and mobile (390 px) widths. A local test verified populated statistics, search for `banqueta`, the Mexico filter, a 60-word Mexican vocabulary discovery sample, System-to-Dark switching, and no mobile horizontal overflow. No browser page errors occurred in the test. Because the environment could not access remote sites, JSON index requests were fulfilled from the **actual generated index files**, while the external GitHub lexical shard response was mocked; this does **not** prove live Pages or raw.githubusercontent.com delivery. Real deployed cross-origin fetches and phone QA remain outstanding.
+
+## Mexican flag identity
+
+The browser favicon, header mark and hero badge use the actual Mexican flag with its national coat of arms, sourced from the MIT-licensed [flag-icons](https://github.com/lipis/flag-icons) project. The website includes the copyright/license text in `flag-license.txt`; the site's footer links to the original artwork. A subtle green-white-red ribbon sits below the navigation. The design follows System/Light/Dark themes and remains responsive on narrow screens.
+

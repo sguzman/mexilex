@@ -214,6 +214,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         ("app.js", include_str!("../site/app.js")),
         ("search.mjs", include_str!("../site/search.mjs")),
         ("favicon.svg", include_str!("../site/favicon.svg")),
+        ("flag-license.txt", include_str!("../site/flag-license.txt")),
     ] {
         fs::write(destination.join(name), content)?;
     }

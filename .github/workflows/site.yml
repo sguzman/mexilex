@@ -39,6 +39,10 @@ jobs:
       - name: Verify index and deployment footprint
         run: |
           test -s data/site/index.html
+          test -s data/site/favicon.svg
+          test -s data/site/flag-license.txt
+          grep -q "mexico-hero-flag" data/site/index.html
+          grep -q "mexico-tricolor-ribbon" data/site/index.html
           test -s data/site/config.json
           test -s data/site/mexico.json
           test -s data/site/index/ba.json

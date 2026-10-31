@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Explore Spanish vocabulary used in Mexico, with English definitions and sourced regional labels.">
   <title>Mexilex · Mexican Spanish lexical atlas</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="./favicon.svg?v=mx-flag-1" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
@@ -14,7 +14,7 @@
   <header class="site-header">
     <div class="shell topbar">
       <a class="brand" href="./" aria-label="Mexilex home">
-        <span class="brand-mark" aria-hidden="true">mx</span><span>mexilex<span class="dot">.</span></span>
+        <img class="brand-mark mexico-brand-flag" src="./favicon.svg" alt="" width="40" height="30"><span>mexilex<span class="dot">.</span></span>
       </a>
       <nav aria-label="Main navigation">
         <a href="#dictionary" aria-current="page">Dictionary</a>
@@ -26,9 +26,14 @@
       </nav>
     </div>
   </header>
+  <div class="mexico-tricolor-ribbon" aria-hidden="true"></div>
   <main class="shell">
     <section class="hero" aria-labelledby="headline">
       <div class="overline"><span class="pulse"></span> THE MEXICAN SPANISH LEXICON</div>
+      <div class="mexico-hero-banner" aria-label="Mexican Spanish">
+        <img class="mexico-hero-flag" src="./favicon.svg" alt="Flag of Mexico" width="80" height="60">
+        <span class="mexico-hero-banner-copy"><strong>ESPAÑOL DE MÉXICO</strong><span>Mexican Spanish · English definitions</span></span>
+      </div>
       <h1 id="headline">The words of Mexico.<br><em>Explained in English.</em></h1>
       <p class="hero-description">A growing, open lexical catalogue for discovering how Spanish words are used and what they mean. Every entry traces back to its dictionary source.</p>
       <div class="metrics" aria-label="Corpus statistics">
@@ -60,6 +65,6 @@
       <aside class="scope-note"><strong>A note on regionality.</strong> Mexico-specific labels come from the underlying source. General Spanish entries are included because they may also be used in Mexico; an unlabeled meaning is <em>not</em> a claim that it is absent from Mexican Spanish.</aside>
     </section>
   </main>
-  <footer class="footer shell"><div><strong>mexilex.</strong><span>One language. One bounded lexical catalogue.</span></div><div>Dictionary text: <a href="https://en.wiktionary.org/wiki/Wiktionary:Copyrights" target="_blank" rel="noopener noreferrer">Wiktionary contributors · CC BY-SA / GFDL</a><br>Extracted via <a href="https://kaikki.org/" target="_blank" rel="noopener noreferrer">Kaikki / Wiktextract</a>. Code: MIT.</div></footer>
+  <footer class="footer shell"><div><strong>mexilex.</strong><span>One language. One bounded lexical catalogue.</span></div><div>Dictionary text: <a href="https://en.wiktionary.org/wiki/Wiktionary:Copyrights" target="_blank" rel="noopener noreferrer">Wiktionary contributors · CC BY-SA / GFDL</a><br>Extracted via <a href="https://kaikki.org/" target="_blank" rel="noopener noreferrer">Kaikki / Wiktextract</a>. Code: MIT. Flag illustration: <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener noreferrer">flag-icons</a> (MIT).</div></footer>
 </body>
 </html>
