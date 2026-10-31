@@ -483,6 +483,16 @@ mod tests {
             ),
         )
         .unwrap();
+        fs::write(
+            evidence.join("eswiktionary-mexico.jsonl"),
+            "[\"banqueta\",\"noun\",1,true]\n[\"casa\",\"noun\",1,true]\n[\"otra\",\"noun\",1,false]\n",
+        )
+        .unwrap();
+        fs::write(
+            evidence.join("eswiktionary-mexico.manifest.json"),
+            "{\"format_version\":1,\"source_edition\":\"eswiktionary\",\"distinct_word_pos\":3,\"source_senses\":3,\"matched_spellings\":2}",
+        )
+        .unwrap();
         build_site(&corpus, &site, &"e".repeat(40)).unwrap();
         let banqueta: Value =
             serde_json::from_reader(File::open(site.join("index/ba.json")).unwrap()).unwrap();
@@ -491,6 +501,9 @@ mod tests {
         let config: Value =
             serde_json::from_reader(File::open(site.join("config.json")).unwrap()).unwrap();
         assert_eq!(config["mexico_dialogue_headwords"], 2);
+        assert_eq!(config["wikcionario_mexico_headwords"], 2);
+        assert_eq!(banqueta[0][7], true);
+        assert_eq!(casa[0][7], true);
         assert_eq!(banqueta[0][6][0], 1.06);
         assert_eq!(banqueta[0][4], true);
         assert_eq!(casa[0][6][0], 120.12);
@@ -501,6 +514,7 @@ mod tests {
         assert_eq!(dialogue[1][0], "banqueta");
         assert_eq!(dialogue[0][4], false);
         assert!(site.join("mexico-frequency-license.txt").exists());
+        assert!(site.join("wikcionario-source.txt").exists());
         fs::write(
             evidence.join("activ-es-v02.manifest.json"),
             "{\"format_version\":1,\"source_commit\":\"wrong\",\"attested_mexico\":2}",
