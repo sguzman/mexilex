@@ -106,26 +106,43 @@ fn load_mexican_frequency(corpus: &Path) -> Result<BTreeMap<String, [f64; 4]>> {
     if !path.exists() {
         return Ok(BTreeMap::new());
     }
-    let manifest: Value = serde_json::from_reader(File::open(base.join("evidence/activ-es-v02.manifest.json"))?)?;
+    let manifest: Value = serde_json::from_reader(File::open(
+        base.join("evidence/activ-es-v02.manifest.json"),
+    )?)?;
     if manifest.get("format_version").and_then(Value::as_u64) != Some(1)
-        || manifest.get("source_commit").and_then(Value::as_str) != Some(crate::evidence::SOURCE_COMMIT) {
+        || manifest.get("source_commit").and_then(Value::as_str)
+            != Some(crate::evidence::SOURCE_COMMIT)
+    {
         return Err("unsupported Mexican frequency evidence provenance".into());
     }
     let mut by_word = BTreeMap::new();
     for line in BufReader::new(File::open(path)?).lines() {
         let row: Value = serde_json::from_str(&line?)?;
-        let cells = row.as_array().ok_or("expected one Mexican evidence array per line")?;
-        if cells.len() != 5 { return Err("expected five Mexican frequency fields".into()); }
-        let word = cells[0].as_str().ok_or("missing frequency headword")?.to_lowercase();
+        let cells = row
+            .as_array()
+            .ok_or("expected one Mexican evidence array per line")?;
+        if cells.len() != 5 {
+            return Err("expected five Mexican frequency fields".into());
+        }
+        let word = cells[0]
+            .as_str()
+            .ok_or("missing frequency headword")?
+            .to_lowercase();
         let mut rates = [0.0; 4];
         for (index, rate) in rates.iter_mut().enumerate() {
-            *rate = cells[index + 1].as_f64().ok_or("missing frequency metric")?;
+            *rate = cells[index + 1]
+                .as_f64()
+                .ok_or("missing frequency metric")?;
             if !rate.is_finite() || *rate < 0.0 {
                 return Err("invalid Mexican dialogue frequency metric".into());
             }
         }
-        if rates[0] <= 0.0 { return Err("Mexico attestation must be positive".into()); }
-        if by_word.insert(word, rates).is_some() { return Err("duplicate Mexico evidence word".into()); }
+        if rates[0] <= 0.0 {
+            return Err("Mexico attestation must be positive".into());
+        }
+        if by_word.insert(word, rates).is_some() {
+            return Err("duplicate Mexico evidence word".into());
+        }
     }
     if manifest["attested_mexico"].as_u64() != Some(by_word.len() as u64) {
         return Err("Mexico evidence count differs from provenance manifest".into());
@@ -252,7 +269,10 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         ("search.mjs", include_str!("../site/search.mjs")),
         ("favicon.svg", include_str!("../site/favicon.svg")),
         ("flag-license.txt", include_str!("../site/flag-license.txt")),
-        ("mexico-frequency-license.txt", include_str!("../evidence/ACTIV-ES-LICENSE")),
+        (
+            "mexico-frequency-license.txt",
+            include_str!("../evidence/ACTIV-ES-LICENSE"),
+        ),
     ] {
         fs::write(destination.join(name), content)?;
     }
