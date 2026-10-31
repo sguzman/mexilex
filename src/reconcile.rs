@@ -150,7 +150,9 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
     let mut unmatched_old_counts: HashMap<Identity, usize> = HashMap::new();
     for entry in old.values() {
         if !new.contains_key(&entry.id) {
-            *unmatched_old_counts.entry(entry.identity.clone()).or_default() += 1;
+            *unmatched_old_counts
+                .entry(entry.identity.clone())
+                .or_default() += 1;
         }
     }
     let mut stats = CompareStats {
@@ -177,9 +179,7 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
         } else if let Some(target) = exact {
             stats.exact += 1;
             ("exact", Some(target))
-        } else if candidates.len() == 1
-            && unmatched_old_counts.get(&entry.identity) == Some(&1)
-        {
+        } else if candidates.len() == 1 && unmatched_old_counts.get(&entry.identity) == Some(&1) {
             stats.candidate_review += 1;
             ("candidate_review", Some(candidates[0]))
         } else if !candidates.is_empty() {
@@ -395,7 +395,8 @@ mod tests {
         let old = [
             entry("deleted", "cura", "noun", &[("s1", "priest")]),
             entry("retained", "cura", "noun", &[("s2", "cure")]),
-        ].join("\n");
+        ]
+        .join("\n");
         let new = entry("retained", "cura", "noun", &[("s2", "cure")]);
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.exact, 1);
@@ -411,7 +412,8 @@ mod tests {
         let old = [
             entry("old-a", "cura", "noun", &[("s1", "priest")]),
             entry("old-b", "cura", "noun", &[("s2", "cure")]),
-        ].join("\n");
+        ]
+        .join("\n");
         let new = entry("new-c", "cura", "noun", &[("s1", "priest")]);
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.ambiguous, 2);
@@ -427,11 +429,13 @@ mod tests {
         let old = [
             entry("old-a", "cura", "noun", &[("s1", "priest")]),
             entry("retained", "cura", "noun", &[("s2", "cure")]),
-        ].join("\n");
+        ]
+        .join("\n");
         let new = [
             entry("new-a", "cura", "noun", &[("s1", "priest")]),
             entry("retained", "cura", "noun", &[("s2", "cure")]),
-        ].join("\n");
+        ]
+        .join("\n");
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.exact, 1);
         assert_eq!(stats.candidate_review, 1);
@@ -445,7 +449,8 @@ mod tests {
         let old = [
             entry("reused", "cura", "noun", &[("s1", "priest")]),
             entry("deleted", "curar", "verb", &[("s2", "to cure")]),
-        ].join("\n");
+        ]
+        .join("\n");
         let new = entry("reused", "curar", "verb", &[("s2", "to cure")]);
         let (stats, report) = compare(&old, &new);
         assert_eq!(stats.id_conflicts, 1);
