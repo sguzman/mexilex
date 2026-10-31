@@ -64,6 +64,9 @@ jobs:
           cp evidence/activ-es-v02.jsonl data/release/study/mexico-dialogue-frequency.jsonl
           cp evidence/activ-es-v02.manifest.json data/release/study/mexico-dialogue-frequency-manifest.json
           cp evidence/ACTIV-ES-LICENSE data/release/study/ACTIV-ES-LICENSE
+          cp evidence/eswiktionary-mexico.jsonl data/release/study/wikcionario-mexico.jsonl
+          cp evidence/eswiktionary-mexico.manifest.json data/release/study/wikcionario-mexico-manifest.json
+          cp evidence/WIKCIONARIO-SOURCE.md data/release/study/WIKCIONARIO-SOURCE.md
           for folder in sqlite study; do
             cp CORPUS-LICENSE.md "data/release/$folder/CORPUS-LICENSE.md"
             cp corpus/manifest.json "data/release/$folder/source-manifest.json"
@@ -85,6 +88,8 @@ jobs:
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/mexico-labeled.jsonl'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/mexico-dialogue-frequency.jsonl'
             tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/ACTIV-ES-LICENSE'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/wikcionario-mexico.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/WIKCIONARIO-SOURCE.md'
           )
       - name: Upload downloadable preview
         uses: actions/upload-artifact@v4

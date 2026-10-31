@@ -69,14 +69,18 @@ jobs:
           cp evidence/activ-es-v02.jsonl data/study-package/mexico-dialogue-frequency.jsonl
           cp evidence/activ-es-v02.manifest.json data/study-package/mexico-dialogue-frequency-manifest.json
           cp evidence/ACTIV-ES-LICENSE data/study-package/ACTIV-ES-LICENSE
+          cp evidence/eswiktionary-mexico.jsonl data/study-package/wikcionario-mexico.jsonl
+          cp evidence/eswiktionary-mexico.manifest.json data/study-package/wikcionario-mexico-manifest.json
+          cp evidence/WIKCIONARIO-SOURCE.md data/study-package/WIKCIONARIO-SOURCE.md
           printf '{"format_version":1,"source":"mexilex","source_git_commit":"%s","lexical_language":"es-MX","definition_language":"en","export_kind":"study-entries","default_excludes_pure_inflections":true}\n' "$GITHUB_SHA" > data/study-package/manifest.json
           (
             cd data/study-package
-            sha256sum study.jsonl mexico-labeled.jsonl mexico-dialogue-frequency.jsonl mexico-dialogue-frequency-manifest.json manifest.json > SHA256SUMS
+            sha256sum study.jsonl mexico-labeled.jsonl mexico-dialogue-frequency.jsonl mexico-dialogue-frequency-manifest.json wikcionario-mexico.jsonl wikcionario-mexico-manifest.json manifest.json > SHA256SUMS
           )
           test "$(wc -l < data/study-package/study.jsonl)" -gt 100000
           test "$(wc -l < data/study-package/mexico-labeled.jsonl)" -gt 1000
           test "$(wc -l < data/study-package/mexico-dialogue-frequency.jsonl)" -gt 10000
+          test "$(wc -l < data/study-package/wikcionario-mexico.jsonl)" -gt 1500
       - name: Upload study-export package for the external trainer
         uses: actions/upload-artifact@v4
         with:

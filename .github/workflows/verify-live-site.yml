@@ -40,6 +40,8 @@ jobs:
           grep -q '#ce1126' /tmp/mexilex-live/favicon.svg
           grep -q 'flag-icons-mx' /tmp/mexilex-live/favicon.svg
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}flag-license.txt" -o /tmp/mexilex-live/flag-license.txt
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}wikcionario-source.txt" -o /tmp/mexilex-live/wikcionario-source.txt
+          grep -q "Wikcionario" /tmp/mexilex-live/wikcionario-source.txt
           grep -q "MIT License" /tmp/mexilex-live/flag-license.txt
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}config.json" -o /tmp/mexilex-live/config.json
           curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 "${base}index/ba.json" -o /tmp/mexilex-live/ba.json
@@ -59,9 +61,11 @@ jobs:
           assert.equal(config.definition_language, 'en');
           assert.ok(config.entries > 100000);
           assert.ok(config.mexico_dialogue_headwords > 10000, "Mexican dialogue evidence missing from deployed configuration");
+          assert.ok(config.wikcionario_mexico_headwords > 1000, "Spanish Wiktionary regional evidence missing");
           const banqueta = index.find(row => row[0] === 'banqueta' && row[4] === true);
           assert.ok(banqueta, 'Missing Mexico-labeled banqueta search entry');
           assert.match(banqueta[3].toLowerCase(), /sidewalk/);
+          assert.equal(banqueta[7], true, "Spanish Wiktionary should corroborate banqueta word spelling");
           assert.ok(Array.isArray(banqueta[6]), "Missing Mexican film dialogue frequency evidence for banqueta");
           const id = banqueta[1];
           assert.match(id, /^[0-9a-f]{64}$/);

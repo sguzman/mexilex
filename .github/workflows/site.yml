@@ -44,6 +44,10 @@ jobs:
           test -s data/site/favicon.svg
           test -s data/site/flag-license.txt
           test -s data/site/mexico-frequency-license.txt
+          test -s data/site/wikcionario-source.txt
+          grep -q "WIKCIONARIO MX" data/site/app.js
+          node -e 'const c=require("./data/site/config.json");if(c.wikcionario_mexico_headwords < 1000)process.exit(1)'
+          node -e 'const i=require("./data/site/index/ba.json");if(!i.some(r=>r[0]==="banqueta" && r[7]===true))process.exit(1)'
           node -e 'const m=require("./data/site/config.json"); if(m.mexico_dialogue_headwords < 10000) process.exit(1)'
           grep -q "mexico-hero-flag" data/site/index.html
           grep -q "mexico-tricolor-ribbon" data/site/index.html
