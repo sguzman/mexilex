@@ -52,3 +52,7 @@ The optional Git-tracked `evidence/activ-es-v02.jsonl` sidecar contains observed
 
 The site **never** turns frequency evidence into a Mexico-specific definition label. Words attested in dialogue can be ordinary general Spanish, and film subtitle data is not representative of all spoken or written Mexico. The sidecar and site copy of [ACTIV-ES's GPL-2.0 license](../evidence/ACTIV-ES-LICENSE) remain separate from Wiktionary content licensing. Import details and limitations are documented in [evidence/README.md](../evidence/README.md).
 
+
+## Browse commonly attested Mexican film-dialogue words
+
+The **Common in Mexican film dialogue** button loads a small `dialogue.json` list of up to 500 distinct word spellings ranked by observed Mexico-corpus relative frequency. Both the browse list and the underlying search indexes come from the separately licensed ACTIV-ES v0.2 frequency sidecar and the Git-tracked Wiktionary lexicon. This discovery mode does **not** assert that these words have uniquely Mexican meanings. The original English definitions, sense-level regional tags, source provenance, and license separation remain intact.
