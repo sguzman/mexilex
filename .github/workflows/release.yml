@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/release.yml"
+      - ".github/release-intents/lex-v0.1.0.txt"
   workflow_dispatch:
     inputs:
       version:
@@ -40,6 +41,11 @@ jobs:
             echo "::error::Version must be numeric semver: 0.1.0"
             exit 1
           fi
+      - name: Verify code and study migration tests before packaging
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test --all-targets
       - name: Build database and trainer data from Git-tracked corpus
         run: |
           cargo run --release -- build-from-corpus corpus data/mexilex.sqlite
@@ -88,7 +94,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Publish permanent release assets
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && contains(github.event.head_commit.added, '.github/release-intents/lex-v0.1.0.txt')) }}
         run: |
           cat > data/release-notes.md <<EOF
           Source: English Wiktionary Spanish via Kaikki/Wiktextract.
