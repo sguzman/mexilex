@@ -1,8 +1,8 @@
 mod corpus;
 mod corpus_load;
 mod lexical;
-mod study_export;
 mod site_export;
+mod study_export;
 use flate2::read::MultiGzDecoder;
 use rusqlite::{params, Connection};
 use serde_json::{json, Value};

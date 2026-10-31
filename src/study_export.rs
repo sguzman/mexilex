@@ -43,26 +43,30 @@ pub(crate) fn export_study(
     // On failure, remove the partial export rather than leaving it looking complete.
     let result = (|| -> Result<StudyStats> {
         let mut output = BufWriter::new(
-            OpenOptions::new().write(true).create_new(true).open(destination)?,
+            OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(destination)?,
         );
         let mut stats = StudyStats::default();
         for path in corpus_load::shards(corpus)? {
             for (line_number, line) in BufReader::new(File::open(&path)?).lines().enumerate() {
                 let line = line?;
-                let record: Value = serde_json::from_str(&line).map_err(|error| {
-                    format!("{}:{}: {error}", path.display(), line_number + 1)
-                })?;
+                let record: Value = serde_json::from_str(&line)
+                    .map_err(|error| format!("{}:{}: {error}", path.display(), line_number + 1))?;
                 stats.scanned += 1;
-                let senses = record.get("senses").and_then(Value::as_array)
+                let senses = record
+                    .get("senses")
+                    .and_then(Value::as_array)
                     .ok_or("lexical record missing senses")?;
                 let only_forms = lexical::is_form(senses);
                 if only_forms && !include_forms {
                     stats.excluded_inflections += 1;
                     continue;
                 }
-                let mex = senses.iter().any(|sense| {
-                    sense.get("mexican_usage").and_then(Value::as_bool) == Some(true)
-                });
+                let mex = senses
+                    .iter()
+                    .any(|sense| sense.get("mexican_usage").and_then(Value::as_bool) == Some(true));
                 if mexico_only && !mex {
                     stats.excluded_unlabeled += 1;
                     continue;
@@ -90,10 +94,16 @@ pub(crate) fn export_study(
                 stats.exported += 1;
             }
         }
-        let expected = manifest.get("entry_count").and_then(Value::as_u64)
+        let expected = manifest
+            .get("entry_count")
+            .and_then(Value::as_u64)
             .ok_or("manifest lacks entry count")?;
         if stats.scanned as u64 != expected {
-            return Err(format!("incomplete corpus: expected {expected}, read {}", stats.scanned).into());
+            return Err(format!(
+                "incomplete corpus: expected {expected}, read {}",
+                stats.scanned
+            )
+            .into());
         }
         output.flush()?;
         Ok(stats)
@@ -117,9 +127,14 @@ mod tests {
         crate::import_reader(
             &mut db,
             Cursor::new(include_str!("../tests/fixtures/sample.jsonl")),
-        ).unwrap();
-        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let dir = std::env::temp_dir().join(format!("mexilex-study-{}-{unique}",std::process::id()));
+        )
+        .unwrap();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir =
+            std::env::temp_dir().join(format!("mexilex-study-{}-{unique}", std::process::id()));
         let input = dir.join("corpus");
         crate::corpus::export_corpus(&db, &input).unwrap();
         let output = dir.join("study.jsonl");
@@ -148,8 +163,12 @@ mod tests {
             r#"{"lang_code":"es","word":"caminé","pos":"verb","senses":[{"glosses":["first-person singular preterite of caminar"],"tags":["form-of"]}]}"#,
         ].join("\n");
         crate::import_reader(&mut db, Cursor::new(data)).unwrap();
-        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let dir = std::env::temp_dir().join(format!("mexilex-forms-{}-{unique}",std::process::id()));
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir =
+            std::env::temp_dir().join(format!("mexilex-forms-{}-{unique}", std::process::id()));
         let input = dir.join("corpus");
         crate::corpus::export_corpus(&db, &input).unwrap();
         let a = export_study(&input, &dir.join("lemmas.jsonl"), false, false).unwrap();

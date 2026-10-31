@@ -11,7 +11,6 @@ pub(crate) fn is_form(senses: &[Value]) -> bool {
         })
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -21,7 +20,10 @@ mod tests {
     fn only_pure_inflections_are_hidden_by_default() {
         assert!(is_form(&[json!({"tags":["form-of","plural"]})]));
         assert!(!is_form(&[json!({"tags":[]})]));
-        assert!(!is_form(&[json!({"tags":["form-of"]}),json!({"tags":["Mexico"]})]));
+        assert!(!is_form(&[
+            json!({"tags":["form-of"]}),
+            json!({"tags":["Mexico"]})
+        ]));
         assert!(!is_form(&[]));
     }
 }
