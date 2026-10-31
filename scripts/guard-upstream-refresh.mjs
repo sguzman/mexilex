@@ -51,6 +51,8 @@ export async function inspect(oldManifest, newManifest, oldStudy, report, maximu
       assert.equal(row.new_entry_id, row.old_entry_id, "Exact match must preserve lexical ID");
     } else if (row.status === "candidate_review") {
       assert.match(row.new_entry_id, /^[a-f0-9]{64}$/, "Candidate must reference one valid new lexical ID");
+      assert.ok(!previousIds.has(row.new_entry_id),
+        "Candidate may not reuse an ID already held by an old entry");
       assert.ok(!proposedTargets.has(row.new_entry_id), "Two old entries cannot claim the same candidate");
       proposedTargets.add(row.new_entry_id);
     } else {

@@ -42,7 +42,7 @@ test("actual-upstream summary counts old entries without silently claiming a mig
     assert.equal(parsed.stats.missing_senses,1);
     assert.equal(parsed.stats.missing,0); // Missing meaning is not a missing lexical entry
     assert.equal(parsed.stats.exact + parsed.stats.candidate_review
-      + parsed.stats.ambiguous + parsed.stats.id_conflicts + parsed.stats.missing, 2);
+      + parsed.stats.ambiguous + parsed.stats.id_conflict + parsed.stats.missing, 2);
     assert.equal(parsed.stats.added_senses,1);
     assert.equal(parsed.stats.changed_forms,1);
     assert.equal(parsed.automatic_corpus_update,false);

@@ -76,6 +76,24 @@ test("refresh guard approves unchanged identities but rejects unreviewed changes
     await writeFile(conflicting, conflictRows.join("\n") + "\n");
     await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, conflicting, "2"),
       /Two old entries cannot claim the same candidate/);
+    // A new candidate must not reuse the ID of any old exact/conflicting entry.
+    const reservedRows = unchangedRows.trimEnd().split("\n");
+    reservedRows[0] = JSON.stringify({
+      format_version: 1, status: "candidate_review", requires_review: true,
+      old_entry_id: id(0), new_entry_id: id(1)
+    });
+    const reusedId = join(folder, "reused-target.jsonl");
+    await writeFile(reusedId, reservedRows.join("\n") + "\n");
+    await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, reusedId, "1"),
+      /Candidate may not reuse an ID/);
+    // The original snapshot itself must contain unique lexical IDs.
+    const duplicatedStudy = join(folder, "duplicate-old.jsonl");
+    const previousRows = oldRows.trimEnd().split("\n");
+    previousRows[1] = previousRows[0];
+    await writeFile(duplicatedStudy, previousRows.join("\n") + "\n");
+    await assert.rejects(inspect(oldManifest, nextManifest, duplicatedStudy, unchanged, "0"),
+      /Duplicate previous lexical ID/);
+
 
     await writeFile(nextManifest, JSON.stringify({...manifest, entry_count: 450000}));
     await assert.rejects(inspect(oldManifest, nextManifest, oldStudy, unchanged, "100001"),
