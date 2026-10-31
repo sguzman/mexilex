@@ -157,7 +157,7 @@ pub(crate) fn import_evidence(
             "source_repo": "francojc/activ-es",
             "source_commit": SOURCE_COMMIT,
             "source_path": SOURCE_PATH,
-            "source_sha256": format!("{checksum:x}"),
+            "source_sha256": format!("{:x}", checksum.finalize()),
             "license": "GPL-2.0-only; see ACTIV-ES-LICENSE",
             "measure": "observed relative frequency per 100,000 words of film dialogue",
             "dispersion": "Mexico document dispersion per 10 films",
