@@ -8,6 +8,8 @@ on:
       - src/**
       - Cargo.toml
       - corpus/**
+      - scripts/simulate-snapshot-upgrade.mjs
+      - evidence/**
   workflow_dispatch:
 
 permissions:
@@ -45,6 +47,19 @@ jobs:
           ! grep -q '"status":"candidate_review"' data/self-compare.jsonl
           ! grep -q '"status":"ambiguous"' data/self-compare.jsonl
           ! grep -q '"status":"missing"' data/self-compare.jsonl
+      - name: Simulate a changed full-corpus study snapshot without touching the source
+        run: |
+          node scripts/simulate-snapshot-upgrade.mjs data/study.jsonl data/revised-simulated.jsonl
+          cargo run --release -- compare-study data/study.jsonl data/revised-simulated.jsonl data/reconciliation-simulated.jsonl | tee data/reconciliation-stats.txt
+          test "$(wc -l < data/reconciliation-simulated.jsonl)" -eq "$(wc -l < data/study.jsonl)"
+          grep -q 'changed_definitions: 1' data/reconciliation-stats.txt
+          grep -q 'changed_annotations: 1' data/reconciliation-stats.txt
+          grep -q 'changed_forms: 1' data/reconciliation-stats.txt
+          grep -q 'added_senses: 1' data/reconciliation-stats.txt
+          grep -q 'missing: 1' data/reconciliation-stats.txt
+          grep -q '"requires_review":true' data/reconciliation-simulated.jsonl
+          grep -q '"requires_review":false' data/reconciliation-simulated.jsonl
+          test "$(wc -l < data/revised-simulated.jsonl)" -eq "$(($(wc -l < data/study.jsonl) - 1))"
       - name: Package verified study exports with source and checksums
         run: |
           mkdir -p data/study-package
