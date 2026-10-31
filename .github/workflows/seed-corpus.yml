@@ -1,11 +1,16 @@
 name: Seed or refresh tracked lexical corpus
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/seed-corpus.yml
   workflow_dispatch:
+    inputs:
+      reviewed_sha256:
+        description: "Exact SHA-256 approved from an upstream review"
+        required: true
+        type: string
+      max_review_entries:
+        description: "Maximum previous study entries approved to require review"
+        required: true
+        type: number
 
 permissions:
   contents: write
@@ -17,37 +22,72 @@ concurrency:
 jobs:
   seed:
     runs-on: ubuntu-latest
+    env:
+      REVIEWED_SHA256: ${{ inputs.reviewed_sha256 }}
+      MAX_REVIEW_ENTRIES: ${{ inputs.max_review_entries }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify explicit source and migration approval
+        run: |
+          [[ "$REVIEWED_SHA256" =~ ^[a-f0-9]{64}$ ]] || { echo "::error::Missing reviewed 64-character SHA-256"; exit 1; }
+          [[ "$MAX_REVIEW_ENTRIES" =~ ^[0-9]+$ ]] || { echo "::error::Migration budget must be a nonnegative integer"; exit 1; }
       - name: Download upstream English-Wiktionary Spanish records
         run: |
           mkdir -p data
           curl --fail --location --silent --show-error --retry 4 --retry-all-errors \
             --output data/source.jsonl \
             https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl
-          test "$(stat -c%s data/source.jsonl)" -gt 1000000
-      - name: Build importer and normalize entire dataset
+          test "$(stat -c%s data/source.jsonl)" -gt 100000000
+          actual="$(sha256sum data/source.jsonl | cut -d' ' -f1)"
+          test "$actual" = "$REVIEWED_SHA256" || { echo "::error::Upstream bytes differ from reviewed source"; exit 1; }
+          previous="$(tr -d '\r\n' < corpus/upstream.sha256)"
+          test "$previous" != "$actual" || { echo "::error::No change to source dump"; exit 1; }
+      - name: Build both snapshots without altering Git-tracked corpus
         run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test --all-targets
+          cargo run --release -- export-study corpus data/previous-study.jsonl
           cargo run --release -- import data/source.jsonl data/mexilex.sqlite
-          rm -rf corpus
-          cargo run --release -- export-corpus data/mexilex.sqlite corpus
-          sha256sum data/source.jsonl | cut -d' ' -f1 > corpus/upstream.sha256
-          du -sh corpus
+          cargo run --release -- export-corpus data/mexilex.sqlite data/candidate-corpus
+          cargo run --release -- export-study data/candidate-corpus data/new-study.jsonl
+          printf '%s\n' "$REVIEWED_SHA256" > data/candidate-corpus/upstream.sha256
+          cargo run --release -- compare-study data/previous-study.jsonl data/new-study.jsonl data/reconciliation.jsonl > data/reconciliation-stats.txt
+          node scripts/guard-upstream-refresh.mjs corpus/manifest.json data/candidate-corpus/manifest.json data/previous-study.jsonl data/reconciliation.jsonl "$MAX_REVIEW_ENTRIES" > data/approval-summary.json
+          cat data/approval-summary.json
+          du -sh data/candidate-corpus
       - name: Enforce Git size budget without dropping vocabulary
         run: |
-          bytes="$(du -sb corpus | cut -f1)"
+          bytes="$(du -sb data/candidate-corpus | cut -f1)"
           if test "$bytes" -gt 900000000; then
             echo "::error::Normalized corpus exceeds 900 MB budget; nothing committed."
             exit 1
           fi
-          test -s corpus/manifest.json
-          test "$(find corpus -name '*.jsonl' | wc -l)" -gt 1
-      - name: Commit normalized corpus as one snapshot
+          test -s data/candidate-corpus/manifest.json
+          test "$(find data/candidate-corpus -name '*.jsonl' | wc -l)" -gt 1
+      - name: Archive approved identity report
+        uses: actions/upload-artifact@v4
+        with:
+          name: approved-upstream-change-report
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            data/approval-summary.json
+            data/reconciliation-stats.txt
+            data/reconciliation.jsonl
+            data/candidate-corpus/manifest.json
+            data/candidate-corpus/upstream.sha256
+      - name: Commit normalized corpus as one reviewed snapshot
         run: |
+          rm -rf corpus
+          mv data/candidate-corpus corpus
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A -- corpus
