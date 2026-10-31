@@ -43,7 +43,14 @@ if (option === "--size-check") {
     stats.changed_forms += Number(row.forms_changed === true);
     stats.added_senses += (row.added_sense_ids || []).length;
     for (const sense of row.senses || []) {
-      if (Object.hasOwn(stats, sense.status)) stats[sense.status]++;
+      if (sense.status === "same_definition") continue;
+      const counter = {
+        changed_definition: "changed_definition",
+        changed_annotation: "changed_annotation",
+        missing: "missing_senses",
+      }[sense.status];
+      assert.ok(counter, "Unknown sense-level reconciliation status: " + sense.status);
+      stats[counter]++;
     }
     reviewed++;
   }

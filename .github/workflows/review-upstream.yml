@@ -5,7 +5,8 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/review-upstream.yml"
-      - "scripts/summarize-upstream-review.mjs"
+      # Script changes are verified by fast Node unit tests in Rust checks;
+      # avoid repeating a large upstream download for each implementation edit.
   workflow_dispatch:
   schedule:
     # Weekly, Monday 12:00 UTC. Read-only: no automatic corpus or trainer mutation.
