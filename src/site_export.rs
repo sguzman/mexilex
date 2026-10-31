@@ -68,17 +68,28 @@ fn write_indexes(groups: BTreeMap<String, Vec<SearchRecord>>, directory: &Path) 
     let mut count = 0;
     for (prefix, mut records) in groups {
         records.sort_unstable_by(|a, b| {
-            a.normalized.cmp(&b.normalized)
+            a.normalized
+                .cmp(&b.normalized)
                 .then(a.pos.cmp(&b.pos))
                 .then(a.key.cmp(&b.key))
         });
         let mut writer = BufWriter::new(File::create(directory.join(format!("{prefix}.json")))?);
         writer.write_all(b"[")?;
         for (index, record) in records.into_iter().enumerate() {
-            if index != 0 { writer.write_all(b",")?; }
-            serde_json::to_writer(&mut writer, &json!([
-                record.word, record.key, record.pos, record.gloss, record.mexico, record.form
-            ]))?;
+            if index != 0 {
+                writer.write_all(b",")?;
+            }
+            serde_json::to_writer(
+                &mut writer,
+                &json!([
+                    record.word,
+                    record.key,
+                    record.pos,
+                    record.gloss,
+                    record.mexico,
+                    record.form
+                ]),
+            )?;
         }
         writer.write_all(b"]\n")?;
         writer.flush()?;
@@ -154,7 +165,11 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
                         false
                     ]));
                 }
-                let target = if form { &mut inflection_groups } else { &mut groups };
+                let target = if form {
+                    &mut inflection_groups
+                } else {
+                    &mut groups
+                };
                 target.entry(prefix).or_default().push(SearchRecord {
                     word: word.to_owned(),
                     key: id.to_owned(),
@@ -277,8 +292,14 @@ mod tests {
             "{\"lang_code\":\"es\",\"word\":\"caminé\",\"pos\":\"verb\",\"senses\":[{\"glosses\":[\"first-person preterite of caminar\"],\"tags\":[\"form-of\"]}]}\n"
         );
         crate::import_reader(&mut db, Cursor::new(fixture)).unwrap();
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let root = std::env::temp_dir().join(format!("mexilex-index-split-{}-{nanos}", std::process::id()));
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "mexilex-index-split-{}-{nanos}",
+            std::process::id()
+        ));
         let source = root.join("corpus");
         let target = root.join("site");
         crate::corpus::export_corpus(&db, &source).unwrap();
@@ -287,8 +308,10 @@ mod tests {
         assert_eq!(result.inflected_entries, 1);
         assert_eq!(result.index_buckets, 1);
         assert_eq!(result.form_buckets, 1);
-        let headwords: Value = serde_json::from_reader(File::open(target.join("index/ca.json")).unwrap()).unwrap();
-        let inflections: Value = serde_json::from_reader(File::open(target.join("forms/ca.json")).unwrap()).unwrap();
+        let headwords: Value =
+            serde_json::from_reader(File::open(target.join("index/ca.json")).unwrap()).unwrap();
+        let inflections: Value =
+            serde_json::from_reader(File::open(target.join("forms/ca.json")).unwrap()).unwrap();
         assert_eq!(headwords.as_array().unwrap().len(), 1);
         assert_eq!(inflections.as_array().unwrap().len(), 1);
         assert_eq!(headwords[0][0], "caminar");
