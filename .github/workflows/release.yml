@@ -94,7 +94,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Publish permanent release assets
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && contains(github.event.head_commit.added, '.github/release-intents/lex-v0.1.0.txt')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.event.head_commit.message == 'release: publish lex-v0.1.0') }}
         run: |
           cat > data/release-notes.md <<EOF
           Source: English Wiktionary Spanish via Kaikki/Wiktextract.
