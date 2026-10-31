@@ -87,3 +87,7 @@ The [read-only dictionary website](site/index.html) now has a static UI and Rust
 ## Mexican language evidence
 
 [Mexican Spanish enrichment source audit](docs/mexican-source-audit.md) records candidate frequency and usage datasets, their licensing limitations, and the rule that attested Mexican frequency **must not be mistaken for** an explicitly Mexico-specific dictionary meaning. No unverified third-party corpus has been imported.
+
+## Durable lexical releases
+
+The [manual release workflow](.github/workflows/release.yml) packages versioned SQLite and study exports from the tracked vocabulary with checksums, source manifests, and license notices. Publication is explicit, not automatic. See [release documentation](docs/releases.md).

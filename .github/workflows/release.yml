@@ -1,0 +1,93 @@
+name: Package versioned lexical release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, e.g. 0.1.0"
+        type: string
+        required: true
+      publish:
+        description: "Publish GitHub release (false creates preview artifact only)"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mexilex-release
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check release version
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must be numeric semver: 0.1.0"
+            exit 1
+          fi
+      - name: Build database and trainer data from Git-tracked corpus
+        run: |
+          cargo run --release -- build-from-corpus corpus data/mexilex.sqlite
+          cargo run --release -- export-study corpus data/study.jsonl
+          cargo run --release -- export-study corpus data/mexico-labeled.jsonl --mexico-only
+          test -s data/mexilex.sqlite
+          test "$(wc -l < data/study.jsonl)" -gt 100000
+          test "$(wc -l < data/mexico-labeled.jsonl)" -gt 1000
+      - name: Package source metadata, licensing, and data
+        run: |
+          mkdir -p data/release/sqlite data/release/study dist
+          cp data/mexilex.sqlite data/release/sqlite/mexilex.sqlite
+          cp data/study.jsonl data/release/study/study.jsonl
+          cp data/mexico-labeled.jsonl data/release/study/mexico-labeled.jsonl
+          for folder in sqlite study; do
+            cp CORPUS-LICENSE.md "data/release/$folder/CORPUS-LICENSE.md"
+            cp corpus/manifest.json "data/release/$folder/source-manifest.json"
+            cp corpus/upstream.sha256 "data/release/$folder/upstream.sha256"
+            printf '{"format_version":1,"project":"mexilex","version":"%s","source_git_commit":"%s","lexical_language":"es-MX","definition_language":"en","content_license":"See CORPUS-LICENSE.md"}\n' "$VERSION" "$GITHUB_SHA" > "data/release/$folder/release-manifest.json"
+          done
+          tar -czf "dist/mexilex-sqlite-v$VERSION.tar.gz" -C data/release/sqlite .
+          tar -czf "dist/mexilex-study-v$VERSION.tar.gz" -C data/release/study .
+          (
+            cd dist
+            sha256sum "mexilex-sqlite-v$VERSION.tar.gz" "mexilex-study-v$VERSION.tar.gz" > SHA256SUMS
+          )
+          test -s dist/SHA256SUMS
+      - name: Upload downloadable preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: mexilex-release-preview
+          path: dist/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Publish permanent release assets
+        if: ${{ inputs.publish }}
+        run: |
+          cat > data/release-notes.md <<EOF
+          Source: English Wiktionary Spanish via Kaikki/Wiktextract.
+          Lexical target: es-MX. Definition language: en.
+          Source commit: $GITHUB_SHA.
+
+          The SQLite archive contains a generated database; the study archive
+          contains stateless headword-oriented vocabulary and Mexico-labeled entries.
+          See CORPUS-LICENSE.md in each archive for upstream licensing.
+          Do not erase trainer review history when changing dictionary snapshots;
+          use the compare-study reconciliation command first.
+          EOF
+          gh release create "lex-v$VERSION" \
+            "dist/mexilex-sqlite-v$VERSION.tar.gz" \
+            "dist/mexilex-study-v$VERSION.tar.gz" \
+            dist/SHA256SUMS \
+            --target "$GITHUB_SHA" \
+            --title "Mexilex lexical snapshot v$VERSION" \
+            --notes-file data/release-notes.md
