@@ -30,3 +30,11 @@ jobs:
         run: |
           test -s data/rebuilt.sqlite
           test "$(stat -c%s data/rebuilt.sqlite)" -gt 1000000
+      - name: Export real study entries without downloading upstream again
+        run: |
+          cargo run --release -- export-study corpus data/study.jsonl
+          test -s data/study.jsonl
+          test "$(wc -l < data/study.jsonl)" -gt 100000
+          grep -q '"word":"banqueta"' data/study.jsonl
+          cargo run --release -- export-study corpus data/mexican-study.jsonl --mexico-only
+          test "$(wc -l < data/mexican-study.jsonl)" -gt 1000

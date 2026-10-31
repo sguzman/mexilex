@@ -48,3 +48,7 @@ The source dictionary content retains upstream CC BY-SA / GFDL licensing obligat
 ## Rebuilding the index from Git
 
 `build-from-corpus corpus data/mexilex.sqlite` regenerates a local SQLite index without fetching the raw third-party dump. It validates the corpus format version, languages, shard placement, uniqueness, and manifest counts. SQLite is a derived consumer artifact, while Git's normalized shards remain the authoritative public lexical dataset. The original upstream line number is not included in this normalized snapshot and is represented as zero when rebuilding.
+
+## Trainer handoff
+
+`export-study` is a **stateless read model** that filters pure form-of records by default. It does not modify the Git corpus and emits full source IDs, English meanings, examples, usage annotations and word forms. It intentionally does not generate duplicate ambiguous front/back cards for every meaning: the separate trainer may choose its own recognition, production and sentence-cloze templates. See [study-export.md](study-export.md).

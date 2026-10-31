@@ -65,8 +65,7 @@ function renderResults(matches, total) {
   matches.forEach(row => {
     const btn = el("button", "result-row");
     btn.type = "button";
-    btn.setAttribute("role", "listitem");
-    btn.setAttribute("aria-selected", String(row[1] === selectedId));
+    btn.setAttribute("aria-pressed", String(row[1] === selectedId));
     const head = el("div", "result-head");
     head.append(el("span", "word", row[0]), el("span", "pos", row[2]));
     if (row[4]) head.append(el("span", "tag", "MEXICO"));
@@ -141,7 +140,7 @@ function sourceLink(anchor, text, url) {
 }
 async function selectEntry(selected) {
   selectedId = selected[1];
-  Array.from(results.children).forEach((btn, i) => btn.setAttribute("aria-selected", String(activeSearch[i]?.[1] === selectedId)));
+  Array.from(results.children).forEach((btn, i) => btn.setAttribute("aria-pressed", String(activeSearch[i]?.[1] === selectedId)));
   displayEmpty(detail, "Loading entry…");
   try {
     if (!config || !/^[0-9a-f]{40}$/.test(config.commit)) throw new Error("Missing pinned source revision");

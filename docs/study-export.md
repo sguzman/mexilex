@@ -1,0 +1,45 @@
+# Study export contract (v1)
+
+The **Mexilex study export** is a machine-readable input for a separate Rust/egui spaced-repetition application. It is a catalog of lexical entries, not a private user database and not a prebuilt Anki deck.
+
+```sh
+cargo run --release -- export-study corpus data/study.jsonl
+cargo run --release -- export-study corpus data/mexican-study.jsonl --mexico-only
+cargo run --release -- export-study corpus data/all-forms.jsonl --include-forms
+```
+
+Every invocation writes a **new** output file; it never overwrites another export or changes anything in the Git-tracked `corpus/`. The default export removes records whose every meaning has the `form-of` tag (e.g. many conjugated verbs). That does not remove conjugations from the source corpus: those remain available to the trainer on demand. `--mexico-only` keeps entries that have at least one explicitly tagged Mexico-specific meaning, while preserving all their distinct meanings.
+
+Each JSONL line contains one lexical entry:
+
+```json
+{
+  "format_version": 1,
+  "source": "mexilex",
+  "source_edition": "enwiktionary",
+  "lexical_language": "es-MX",
+  "definition_language": "en",
+  "entry_id": "<content-derived lexical key>",
+  "word": "banqueta",
+  "part_of_speech": "noun",
+  "etymology_number": null,
+  "forms": [],
+  "senses": [
+    {"id": "<upstream sense identifier>", "definition_en": "sidewalk", "mexican_usage": true}
+  ],
+  "mexico_labeled": true,
+  "inflection_only": false
+}
+```
+
+The example above illustrates the core fields; real records retain the full sense objects, including examples and raw tags.
+
+## Responsibilities and limits
+
+- All word content comes from the Git corpus. The downstream trainer owns review events, due dates, spaced-repetition state, deck memberships and personal performance metrics.
+- Do **not** treat two senses with the same headword as automatically two unambiguous front/back flashcards. The trainer may generate more precise card prompts with contextual example sentences.
+- `entry_id` and sense IDs identify a source record, but a future Wiktionary refresh may change text-derived hashes or upstream IDs. Persist a source snapshot ID alongside progress and reconcile renamed/changed entries instead of wiping learning history.
+- An entry lacking Mexico-specific tags may still be ordinary Mexican Spanish; filters never assert that unlabeled words are Spain-only.
+- Public redistribution must preserve Wiktionary's separate lexical-content licensing and attribution (see [CORPUS-LICENSE.md](../CORPUS-LICENSE.md)); Mexilex code remains MIT licensed.
+
+No manual vocabulary ceiling is enforced. Statistics from the site build indicate the majority of imported records are inflected forms, so the default study export is intentionally much smaller than the full dictionary.

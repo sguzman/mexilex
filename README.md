@@ -79,3 +79,7 @@ The checked-in three-line fixture tests both the importer and deterministic Git 
 ## Website
 
 The [read-only dictionary website](site/index.html) now has a static UI and Rust-generated prefix-search indexes. Run `cargo run --release -- build-site corpus data/site "$(git rev-parse HEAD)"` to build it from the checked-in vocabulary. [Website documentation](docs/website.md) explains the search architecture, preview artifact, licensing and GitHub Pages publication setup. The separate Rust/egui spaced-repetition trainer will continue to own learning progress.
+
+## Study exports (for a separate trainer)
+
+`mexilex export-study corpus data/study.jsonl` creates a new, versioned JSONL study-entry file from the lexical records **already checked into Git**. It excludes entries that are purely `form-of` inflections by default, but retains every meaning of the surviving headwords. Options `--mexico-only` and `--include-forms` can be combined. See [study export contract](docs/study-export.md). No review history, user account, or spaced-repetition algorithm is embedded in these records.
