@@ -79,7 +79,7 @@ try {
       width, height, deviceScaleFactor: 1, mobile
     });
     await call("Emulation.setTouchEmulationEnabled", {
-      enabled: mobile, maxTouchPoints: mobile ? 1 : 0
+      enabled: mobile, maxTouchPoints: 1
     });
   }
   async function navigate() {
