@@ -44,7 +44,7 @@ fn exact_count(manifest: &Value, key: &str, count: usize) -> Result<()> {
     Ok(())
 }
 
-fn shards(directory: &Path) -> Result<Vec<PathBuf>> {
+pub(crate) fn shards(directory: &Path) -> Result<Vec<PathBuf>> {
     let mut paths = Vec::new();
     for item in fs::read_dir(directory)? {
         let item = item?;
