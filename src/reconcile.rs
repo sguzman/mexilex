@@ -126,12 +126,32 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
 ) -> Result<CompareStats> {
     let old = read_study(old_reader)?;
     let new = read_study(new_reader)?;
+    // An ID still present in both snapshots is already claimed, including
+    // conflicts where that ID was reused for a different lexical identity.
+    // Never propose the same new ID as a replacement for a second old entry.
+    let claimed_new_ids: std::collections::HashSet<&str> = new
+        .keys()
+        .filter(|id| old.contains_key(*id))
+        .map(String::as_str)
+        .collect();
     let mut by_identity: HashMap<Identity, Vec<&Entry>> = HashMap::new();
     for entry in new.values() {
+        if claimed_new_ids.contains(entry.id.as_str()) {
+            continue;
+        }
         by_identity
             .entry(entry.identity.clone())
             .or_default()
             .push(entry);
+    }
+    // A unique new candidate is safe to *propose* only if exactly one old
+    // entry with that identity also needs a replacement. Otherwise two old
+    // cards could be directed to one new entry and have their histories merged.
+    let mut unmatched_old_counts: HashMap<Identity, usize> = HashMap::new();
+    for entry in old.values() {
+        if !new.contains_key(&entry.id) {
+            *unmatched_old_counts.entry(entry.identity.clone()).or_default() += 1;
+        }
     }
     let mut stats = CompareStats {
         previous: old.len(),
@@ -157,10 +177,12 @@ pub(crate) fn compare_readers<O: BufRead, N: BufRead, W: Write>(
         } else if let Some(target) = exact {
             stats.exact += 1;
             ("exact", Some(target))
-        } else if candidates.len() == 1 {
+        } else if candidates.len() == 1
+            && unmatched_old_counts.get(&entry.identity) == Some(&1)
+        {
             stats.candidate_review += 1;
             ("candidate_review", Some(candidates[0]))
-        } else if candidates.len() > 1 {
+        } else if !candidates.is_empty() {
             stats.ambiguous += 1;
             ("ambiguous", None)
         } else {
@@ -366,6 +388,71 @@ mod tests {
         assert_eq!(stats.id_conflicts, 1);
         assert_eq!(report[0]["status"], "id_conflict");
         assert_eq!(report[0]["new_entry_id"], Value::Null);
+    }
+
+    #[test]
+    fn existing_exact_target_is_never_proposed_for_deleted_homograph() {
+        let old = [
+            entry("deleted", "cura", "noun", &[("s1", "priest")]),
+            entry("retained", "cura", "noun", &[("s2", "cure")]),
+        ].join("\n");
+        let new = entry("retained", "cura", "noun", &[("s2", "cure")]);
+        let (stats, report) = compare(&old, &new);
+        assert_eq!(stats.exact, 1);
+        assert_eq!(stats.missing, 1);
+        assert_eq!(stats.candidate_review, 0);
+        assert_eq!(report[0]["status"], "missing");
+        assert_eq!(report[0]["new_entry_id"], Value::Null);
+        assert_eq!(report[1]["status"], "exact");
+    }
+
+    #[test]
+    fn two_old_homographs_cannot_both_claim_one_new_id() {
+        let old = [
+            entry("old-a", "cura", "noun", &[("s1", "priest")]),
+            entry("old-b", "cura", "noun", &[("s2", "cure")]),
+        ].join("\n");
+        let new = entry("new-c", "cura", "noun", &[("s1", "priest")]);
+        let (stats, report) = compare(&old, &new);
+        assert_eq!(stats.ambiguous, 2);
+        assert_eq!(stats.candidate_review, 0);
+        assert!(report.iter().all(|row| row["status"] == "ambiguous"
+            && row["new_entry_id"].is_null()
+            && row["candidate_ids"] == json!(["new-c"])
+            && row["requires_review"] == true));
+    }
+
+    #[test]
+    fn exact_homograph_is_reserved_but_remaining_unique_replacement_is_reviewable() {
+        let old = [
+            entry("old-a", "cura", "noun", &[("s1", "priest")]),
+            entry("retained", "cura", "noun", &[("s2", "cure")]),
+        ].join("\n");
+        let new = [
+            entry("new-a", "cura", "noun", &[("s1", "priest")]),
+            entry("retained", "cura", "noun", &[("s2", "cure")]),
+        ].join("\n");
+        let (stats, report) = compare(&old, &new);
+        assert_eq!(stats.exact, 1);
+        assert_eq!(stats.candidate_review, 1);
+        assert_eq!(report[0]["status"], "candidate_review");
+        assert_eq!(report[0]["new_entry_id"], "new-a");
+        assert_eq!(report[1]["status"], "exact");
+    }
+
+    #[test]
+    fn conflicting_reused_id_is_not_proposed_for_another_old_entry() {
+        let old = [
+            entry("reused", "cura", "noun", &[("s1", "priest")]),
+            entry("deleted", "curar", "verb", &[("s2", "to cure")]),
+        ].join("\n");
+        let new = entry("reused", "curar", "verb", &[("s2", "to cure")]);
+        let (stats, report) = compare(&old, &new);
+        assert_eq!(stats.id_conflicts, 1);
+        assert_eq!(stats.missing, 1);
+        assert_eq!(stats.candidate_review, 0);
+        assert_eq!(report[0]["status"], "missing");
+        assert_eq!(report[1]["status"], "id_conflict");
     }
 
     #[test]
