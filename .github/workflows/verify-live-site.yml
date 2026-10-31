@@ -53,9 +53,11 @@ jobs:
           assert.equal(config.dictionary_language, 'es-MX');
           assert.equal(config.definition_language, 'en');
           assert.ok(config.entries > 100000);
+          assert.ok(config.mexico_dialogue_headwords > 10000, "Mexican dialogue evidence missing from deployed configuration");
           const banqueta = index.find(row => row[0] === 'banqueta' && row[4] === true);
           assert.ok(banqueta, 'Missing Mexico-labeled banqueta search entry');
           assert.match(banqueta[3].toLowerCase(), /sidewalk/);
+          assert.ok(Array.isArray(banqueta[6]), "Missing Mexican film dialogue frequency evidence for banqueta");
           const id = banqueta[1];
           assert.match(id, /^[0-9a-f]{64}$/);
           const url = `https://raw.githubusercontent.com/sguzman/mexilex/${config.commit}/corpus/${id.slice(0,2)}/${id[2]}.jsonl`;
