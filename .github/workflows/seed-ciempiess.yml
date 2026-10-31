@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/seed-ciempiess.yml"
+      - "scripts/import-ciempiess.mjs"
+      - "tests/ciempiess-import.test.mjs"
   workflow_dispatch:
 
 permissions:
