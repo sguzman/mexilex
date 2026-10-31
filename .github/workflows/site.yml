@@ -33,6 +33,7 @@ jobs:
         run: |
           test -s data/site/index.html
           test -s data/site/config.json
+          test -s data/site/mexico.json
           test -s data/site/index/ba.json
           grep -q '"banqueta"' data/site/index/ba.json
           test "$(find data/site/index -name '*.json' | wc -l)" -gt 50

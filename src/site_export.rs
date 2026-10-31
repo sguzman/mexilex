@@ -85,6 +85,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
     }
     let mut groups: BTreeMap<String, Vec<SearchRecord>> = BTreeMap::new();
     let mut stats = SiteStats::default();
+    let mut mexican_browse: Vec<Value> = Vec::new();
 
     for path in corpus_load::shards(corpus)? {
         for (line_index, line) in BufReader::new(File::open(&path)?).lines().enumerate() {
@@ -117,6 +118,16 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
             }
             let normalized = normalize(word);
             if let Some(prefix) = bucket(&normalized) {
+                if mexican && !form {
+                    mexican_browse.push(json!([
+                        word,
+                        id,
+                        str_field(&record, "part_of_speech")?,
+                        gloss.chars().take(140).collect::<String>(),
+                        true,
+                        false
+                    ]));
+                }
                 groups.entry(prefix).or_default().push(SearchRecord {
                     word: word.to_owned(),
                     key: id.to_owned(),
@@ -174,6 +185,15 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
         writer.flush()?;
         stats.index_buckets += 1;
     }
+    // A small, independently downloadable browse list for discovering Mexico-tagged
+    // headwords without knowing an initial query. No word list is hand-maintained.
+    mexican_browse.sort_unstable_by(|a, b| {
+        normalize(a[0].as_str().unwrap_or("")).cmp(&normalize(b[0].as_str().unwrap_or("")))
+    });
+    fs::write(
+        destination.join("mexico.json"),
+        format!("{}\n", serde_json::to_string(&mexican_browse)?),
+    )?;
     for (name, content) in [
         ("index.html", include_str!("../site/index.html")),
         ("style.css", include_str!("../site/style.css")),
@@ -228,6 +248,10 @@ mod tests {
         assert_eq!(stats.entries, 2);
         assert_eq!(stats.mexico_labeled_entries, 1);
         assert_eq!(stats.index_buckets, 2);
+        let featured: Value =
+            serde_json::from_reader(File::open(site.join("mexico.json")).unwrap()).unwrap();
+        assert_eq!(featured.as_array().unwrap().len(), 1);
+        assert_eq!(featured[0][0], "banqueta");
         let banqueta: Value =
             serde_json::from_reader(File::open(site.join("index/ba.json")).unwrap()).unwrap();
         assert_eq!(banqueta[0][0], "banqueta");

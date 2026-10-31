@@ -60,7 +60,7 @@ async function getIndex(bucket) {
 function resultMatches(record, q) {
   return fold(record[0]).startsWith(q) && (!mexicoOnly.checked || record[4]) && (includeForms.checked || !record[5]);
 }
-function renderResults(matches, total) {
+function renderResults(matches, total, sample = false) {
   const fragment = document.createDocumentFragment();
   matches.forEach(row => {
     const btn = el("button", "result-row");
@@ -75,7 +75,7 @@ function renderResults(matches, total) {
   });
   if (matches.length) results.replaceChildren(fragment);
   else displayEmpty(results, "No matching entries. Try removing a filter or searching a different word.");
-  showStatus(total > matches.length ? `First ${matches.length} of ${fmt.format(total)}` : `${fmt.format(total)} result${total === 1 ? "" : "s"}`);
+  showStatus(sample ? `${matches.length} sampled from ${fmt.format(total)}` : total > matches.length ? `First ${matches.length} of ${fmt.format(total)}` : `${fmt.format(total)} result${total === 1 ? "" : "s"}`);
 }
 async function runSearch() {
   const turn = ++sequence;
@@ -111,6 +111,38 @@ async function runSearch() {
     displayEmpty(results, "Could not retrieve the search index. Check your connection and try again.");
   }
 }
+let mexicoBrowseCache;
+byId("browse-mexico").addEventListener("click", async () => {
+  const turn = ++sequence;
+  queryInput.value = "";
+  updateLocation("");
+  mexicoOnly.checked = true;
+  includeForms.checked = false;
+  selectedId = null;
+  displayEmpty(detail, "Choose a Mexico-tagged word to explore its meanings.");
+  showStatus("Loading…");
+  try {
+    if (!mexicoBrowseCache) {
+      const response = await fetch("./mexico.json");
+      if (!response.ok) throw new Error("No Mexico vocabulary index");
+      mexicoBrowseCache = await response.json();
+    }
+    if (turn !== sequence) return;
+    // Shuffle a small list of verified region-tagged headwords rather than
+    // downloading the entire dictionary for a random browse page.
+    const candidates = mexicoBrowseCache.slice();
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+    activeSearch = candidates.slice(0, 60);
+    renderResults(activeSearch, candidates.length, true);
+  } catch (_) {
+    if (turn !== sequence) return;
+    showStatus("Unavailable");
+    displayEmpty(results, "Could not load Mexico-tagged vocabulary. Try searching a word.");
+  }
+});
 let timer;
 queryInput.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(runSearch, 160); });
 mexicoOnly.addEventListener("change", runSearch);
