@@ -67,6 +67,13 @@ jobs:
             sha256sum "mexilex-sqlite-v$VERSION.tar.gz" "mexilex-study-v$VERSION.tar.gz" > SHA256SUMS
           )
           test -s dist/SHA256SUMS
+          (
+            cd dist
+            sha256sum --check SHA256SUMS
+            tar -tzf "mexilex-sqlite-v$VERSION.tar.gz" | grep -q '/mexilex.sqlite'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/study.jsonl'
+            tar -tzf "mexilex-study-v$VERSION.tar.gz" | grep -q '/mexico-labeled.jsonl'
+          )
       - name: Upload downloadable preview
         uses: actions/upload-artifact@v4
         with:

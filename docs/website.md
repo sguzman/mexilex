@@ -34,3 +34,7 @@ GitHub Pages is **not assumed to be enabled** merely because this workflow exist
 ## Licensing
 
 Dictionary content originates from English Wiktionary via Kaikki/Wiktextract. The site links back to Wiktionary, describes the source and licensing in the footer, and links each lexical record to its source shard. See [CORPUS-LICENSE.md](../CORPUS-LICENSE.md). The website code is MIT licensed; dictionary content retains its upstream terms.
+
+## Browser QA record (2026-10-31)
+
+The generated site artifact was inspected with Chromium at desktop (1365 px) and mobile (390 px) widths. A local test verified populated statistics, search for `banqueta`, the Mexico filter, a 60-word Mexican vocabulary discovery sample, System-to-Dark switching, and no mobile horizontal overflow. No browser page errors occurred in the test. Because the environment could not access remote sites, JSON index requests were fulfilled from the **actual generated index files**, while the external GitHub lexical shard response was mocked; this does **not** prove live Pages or raw.githubusercontent.com delivery. Real deployed cross-origin fetches and phone QA remain outstanding.

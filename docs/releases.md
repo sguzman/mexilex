@@ -16,4 +16,4 @@ The SQLite archive includes a generated local dictionary database. The study arc
 
 Lexical-data content retains upstream licenses (not the repository MIT code license). Trainer consumers should pin a release and compare snapshots with `mexilex compare-study` before changing source data, preserving old review events for missing or ambiguous records.
 
-The workflow must be explicitly run; its existence is **not evidence that a permanent release has already been published**.
+The workflow also performs a preview-only smoke test when its own YAML changes on `main`. This test neither creates a tag nor publishes any release. A **permanent release still requires an explicit manual run with Publish: true**.
