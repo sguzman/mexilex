@@ -1,5 +1,7 @@
 mod corpus;
 mod corpus_load;
+mod lexical;
+mod study_export;
 mod site_export;
 use flate2::read::MultiGzDecoder;
 use rusqlite::{params, Connection};
@@ -93,6 +95,26 @@ fn run() -> Result<()> {
             }
             result?;
         }
+        "export-study" => {
+            let source = args.next().ok_or_else(usage)?;
+            let target = args.next().ok_or_else(usage)?;
+            let mut mexico_only = false;
+            let mut include_forms = false;
+            for flag in args {
+                match flag.as_str() {
+                    "--mexico-only" if !mexico_only => mexico_only = true,
+                    "--include-forms" if !include_forms => include_forms = true,
+                    _ => return Err(usage().into()),
+                }
+            }
+            let result = study_export::export_study(
+                Path::new(&source),
+                Path::new(&target),
+                mexico_only,
+                include_forms,
+            )?;
+            println!("{result:#?}");
+        }
         "build-site" => {
             let corpus = args.next().ok_or_else(usage)?;
             let destination = args.next().ok_or_else(usage)?;
@@ -154,7 +176,7 @@ fn run() -> Result<()> {
 }
 
 fn usage() -> String {
-    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex build-site <corpus-dir> <empty-site-dir> <full-commit-sha>\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
+    "usage:\n  mexilex import <enwiktionary.jsonl[.gz]> <catalog.sqlite>\n  mexilex export-corpus <catalog.sqlite> <new-or-empty-directory>\n  mexilex build-from-corpus <corpus-dir> <new-catalog.sqlite>\n  mexilex build-site <corpus-dir> <empty-site-dir> <full-commit-sha>\n  mexilex export-study <corpus-dir> <new-study.jsonl> [--mexico-only] [--include-forms]\n  mexilex stats <catalog.sqlite>\n  mexilex lookup <catalog.sqlite> <spanish-word>\n  mexilex export-tsv <catalog.sqlite> <cards.tsv> [--mexican-only]".to_owned()
 }
 
 fn open_source(path: &str) -> Result<Box<dyn BufRead>> {

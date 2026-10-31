@@ -62,16 +62,6 @@ fn str_field<'a>(record: &'a Value, field: &str) -> Result<&'a str> {
         .ok_or_else(|| format!("corpus record missing {field}").into())
 }
 
-fn is_form(senses: &[Value]) -> bool {
-    !senses.is_empty()
-        && senses.iter().all(|sense| {
-            sense
-                .get("tags")
-                .and_then(Value::as_array)
-                .is_some_and(|tags| tags.iter().any(|tag| tag.as_str() == Some("form-of")))
-        })
-}
-
 pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Result<SiteStats> {
     if commit.len() != 40 || !commit.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err("expected a full 40-digit Git commit SHA".into());
@@ -117,7 +107,7 @@ pub(crate) fn build_site(corpus: &Path, destination: &Path, commit: &str) -> Res
             let mexican = senses
                 .iter()
                 .any(|sense| sense.get("mexican_usage").and_then(Value::as_bool) == Some(true));
-            let form = is_form(senses);
+            let form = crate::lexical::is_form(senses);
             stats.entries += 1;
             if mexican {
                 stats.mexico_labeled_entries += 1;
