@@ -1,0 +1,104 @@
+{
+  "format_version": 1,
+  "project": "mexilex",
+  "ontology_version": "1.0.0",
+  "scope": "Public es-MX-oriented Spanish lexical catalogue with English definitions, source-level provenance, and qualified regional evidence.",
+  "lexical_language": "es-MX",
+  "definition_language": "en",
+  "source_of_truth": "corpus/manifest.json",
+  "status": "descriptive_ontology_of_existing_corpus_not_complete_regional_coverage",
+  "entity_types": [
+    {
+      "id": "lexical_entry",
+      "description": "Versioned Spanish written lexical entry distinguished by its source and entry key; multiple parts of speech and etymologies are not silently merged.",
+      "source": "src/schema.sql:entries"
+    },
+    {
+      "id": "sense",
+      "description": "An individual English-defined meaning belonging to one lexical entry, with sense-level usage labels, examples and attestations.",
+      "source": "src/schema.sql:senses"
+    },
+    {
+      "id": "inflected_form",
+      "description": "Source-attested grammatical or morphological variant associated with a lexical entry.",
+      "source": "src/schema.sql:entries.forms_json"
+    },
+    {
+      "id": "source_edition",
+      "description": "A named edition/extraction and its retained attribution and reuse conditions.",
+      "source": "corpus/manifest.json"
+    },
+    {
+      "id": "regional_usage_label",
+      "description": "A sourced region-specific label on an individual sense; missing labels have unknown regional status.",
+      "source": "src/schema.sql:senses.mexican_usage"
+    },
+    {
+      "id": "usage_attestation",
+      "description": "Separately sourced evidence that a surface word was observed in a bounded regional corpus, not a guarantee about the word's meaning or universal usage.",
+      "source": "evidence/README.md"
+    },
+    {
+      "id": "corpus_snapshot",
+      "description": "Versioned, sharded corpus release with integrity metadata, counts, provenance, and language pair.",
+      "source": "corpus/manifest.json"
+    },
+    {
+      "id": "read_only_projection",
+      "description": "Generated website index or consumer export derived from corpus records, not an independent source of lexical facts.",
+      "source": "docs/website.md"
+    }
+  ],
+  "relation_types": [
+    {
+      "id": "has_sense",
+      "from": "lexical_entry",
+      "to": "sense"
+    },
+    {
+      "id": "has_form",
+      "from": "lexical_entry",
+      "to": "inflected_form"
+    },
+    {
+      "id": "extracted_from",
+      "from": "lexical_entry",
+      "to": "source_edition"
+    },
+    {
+      "id": "labeled_usage",
+      "from": "sense",
+      "to": "regional_usage_label"
+    },
+    {
+      "id": "attested_in",
+      "from": "lexical_entry",
+      "to": "usage_attestation"
+    },
+    {
+      "id": "includes_entry",
+      "from": "corpus_snapshot",
+      "to": "lexical_entry"
+    },
+    {
+      "id": "derived_from",
+      "from": "read_only_projection",
+      "to": "corpus_snapshot"
+    }
+  ],
+  "invariants": [
+    "Mexico-specific labels attach to senses only when explicitly supported by source data.",
+    "Absence of a Mexico label does not establish non-use in Mexico.",
+    "Regional frequency evidence and Mexico-labeled meanings are different claims.",
+    "Published lexical material retains Wiktionary-derived CC BY-SA and GFDL obligations.",
+    "Stable review-history reconciliation across different upstream versions is not assumed.",
+    "Site browsing and consumer exports contain no personal learning history."
+  ],
+  "documentation": [
+    "docs/architecture.md",
+    "docs/website.md",
+    "docs/study-export.md",
+    "CORPUS-LICENSE.md",
+    "evidence/README.md"
+  ]
+}

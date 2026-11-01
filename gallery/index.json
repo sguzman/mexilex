@@ -1,0 +1,18 @@
+{
+  "format_version": 1,
+  "project": "mexilex",
+  "description": "Curated public entry points to the independent Mexican Spanish dictionary and lexical data, not a mirrored corpus.",
+  "entries": [
+    {
+      "id": "mexilex-dictionary",
+      "title": "Mexilex — Mexican Spanish dictionary",
+      "status": "public_read_only",
+      "website_url": "https://sguzman.github.io/mexilex/",
+      "entry_point": "site/index.html",
+      "kind": "interactive_lexical_collection",
+      "ontology": "ontology/ontology.json",
+      "corpus_manifest": "corpus/manifest.json",
+      "notes": "Spanish entries and individual senses with English definitions; Mexico usage labels are explicitly sourced, and other regional evidence is reported separately."
+    }
+  ]
+}
